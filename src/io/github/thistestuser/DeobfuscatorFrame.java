@@ -91,9 +91,8 @@ public class DeobfuscatorFrame
 		deobfuscatorArguments.setBorder(deobArgs);
 		frame.getContentPane().add(deobfuscatorArguments);
 
-		JLabel successOrFail = new JLabel("");
+		JLabel successOrFail = new JLabel("Select deobfuscator.jar to begin!");
 		successOrFail.setBounds(166, 70, 181, 14);
-		successOrFail.setVisible(false);
 		frame.getContentPane().add(successOrFail);
 
 		JButton selectDeob = new JButton("Select");
@@ -227,17 +226,15 @@ public class DeobfuscatorFrame
 					String className = entry.getName().replace('/', '.');
 					if(className.startsWith("com.javadeobfuscator.deobfuscator.transformers"))
 					{
-						
+						System.out.println(className);
 					}
 				}
 			zip.close();
-			displayLabel.setVisible(true);
 			displayLabel.setText("Successfully loaded transformers!");
 			displayLabel.setForeground(Color.GREEN);
 		}catch(Exception e)
 		{
 			e.printStackTrace();
-			displayLabel.setVisible(true);
 			displayLabel.setText("Failed to load transformers (corrupted jar?)");
 			displayLabel.setForeground(Color.red);
 		}
