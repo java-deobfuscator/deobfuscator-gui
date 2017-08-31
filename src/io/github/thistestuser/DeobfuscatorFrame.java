@@ -25,7 +25,9 @@ public class DeobfuscatorFrame
 	private JTextField outputField;
 	private File outputPath;
 	private DefaultListModel<String> transformerList;
-	private DefaultListModel<String> addedTransformers;
+	private DefaultListModel<String> selectedTransformers;
+	private JList<String> transformerJList;
+	private JList<String> selectedTransformersJList;
 
 	/**
 	 * Launch the application.
@@ -142,40 +144,64 @@ public class DeobfuscatorFrame
         JPanel transformers = new JPanel();
         transformers.setLayout(null);
         transformerList = new DefaultListModel<String>();
-        JList<String> list = new JList<>(transformerList);
-        list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        list.setToolTipText("<html>Here you will select the transformers to run.<br>\r\nIf you see no transformers, you have not loaded deobfuscator.jar<br>\r\nor your jar file is corrupt.</html>");
-        list.setBounds(56, 23, 133, 165);
-        list.setModel(transformerList);
-        transformers.add(list);
+        JScrollPane transformerListScroll = new JScrollPane();
+        transformerJList = new JList<>(transformerList);
+        transformerJList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        transformerJList.setToolTipText("<html>Here you will select the transformers to run.<br>\r\nIf you see no transformers, you have not loaded deobfuscator.jar<br>\r\nor your jar file is corrupt.</html>");
+        transformerJList.setBounds(10, 23, 179, 165);
+        transformerJList.setModel(transformerList);
+        transformerListScroll.setViewportView(transformerJList);
+        transformerListScroll.setBounds(transformerJList.getBounds());
+        transformers.add(transformerListScroll);
         
         JPanel libraries = new JPanel();
         libraries.setLayout(null);
         tabbedPane.addTab("Transformers", transformers);
         
-        addedTransformers = new DefaultListModel<String>();
-        JList<String> selectedTransformers = new JList<>(addedTransformers);
-        selectedTransformers.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        selectedTransformers.setToolTipText("<html>Here you will find the list of selected transformers. <br>\r\nThey will be applied in this order. </html>");
-        selectedTransformers.setBounds(298, 23, 133, 165);
-        transformers.add(selectedTransformers);
+        selectedTransformers = new DefaultListModel<String>();
+        JScrollPane transformerSelectScroll = new JScrollPane();
+        selectedTransformersJList = new JList<>(selectedTransformers);
+        selectedTransformersJList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        selectedTransformersJList.setToolTipText("<html>Here you will find the list of selected transformers. <br>\r\nThey will be applied in this order. </html>");
+        selectedTransformersJList.setBounds(323, 23, 179, 165);
+        transformerSelectScroll.setViewportView(selectedTransformersJList);
+        transformerSelectScroll.setBounds(selectedTransformersJList.getBounds());
+        transformers.add(transformerSelectScroll);
         
         JButton addTransformer = new JButton(">");
         addTransformer.setToolTipText("Select the transformer.");
-        addTransformer.setBounds(199, 66, 89, 23);
+        addTransformer.setBounds(213, 66, 89, 23);
+        addTransformer.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				if(transformerJList.getSelectedValue() != null)
+					selectedTransformers.add(selectedTransformers.size(), transformerJList.getSelectedValue());
+			}
+		});
         transformers.add(addTransformer);
         
         JButton removeTransformer = new JButton("<");
         removeTransformer.setToolTipText("Unselect the transformer.");
-        removeTransformer.setBounds(199, 114, 89, 23);
+        removeTransformer.setBounds(213, 114, 89, 23);
+        removeTransformer.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				if(selectedTransformersJList.getSelectedValue() != null)
+					selectedTransformers.remove(selectedTransformersJList.getSelectedIndex());
+			}
+		});
         transformers.add(removeTransformer);
         
         JLabel lblTransformersAvailable = new JLabel("Transformers Available");
-        lblTransformersAvailable.setBounds(56, 6, 133, 14);
+        lblTransformersAvailable.setBounds(10, 6, 133, 14);
         transformers.add(lblTransformersAvailable);
         
         JLabel lblTransformersSelected = new JLabel("Transformers Selected");
-        lblTransformersSelected.setBounds(298, 6, 133, 14);
+        lblTransformersSelected.setBounds(323, 6, 133, 14);
         transformers.add(lblTransformersSelected);
         tabbedPane.addTab("Libraries", libraries);
         
@@ -253,9 +279,14 @@ public class DeobfuscatorFrame
 				if(!entry.isDirectory() && entry.getName().endsWith(".class"))
 				{
 					String className = entry.getName().replace('/', '.');
-					if(className.startsWith("com.javadeobfuscator.deobfuscator.transformers"))
+					if(className.startsWith("com.javadeobfuscator.deobfuscator.transformers.")
+						&& className.length() - className.replace(".", "").length() > 5
+						&& !className.contains("$"))
 					{
-						System.out.println(className);
+						String name = className.substring(0, className.length() - ".class".length());
+						String toPut = name.substring("com.javadeobfuscator.deobfuscator.transformers.".length());
+						if(!transformerList.contains(toPut))
+							transformerList.addElement(toPut);
 					}
 				}
 			zip.close();
