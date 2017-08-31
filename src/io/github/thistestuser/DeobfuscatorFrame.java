@@ -28,6 +28,8 @@ public class DeobfuscatorFrame
 	private DefaultListModel<String> selectedTransformers;
 	private JList<String> transformerJList;
 	private JList<String> selectedTransformersJList;
+	private DefaultListModel<String> librariesList;
+	private File libraryPath;
 
 	/**
 	 * Launch the application.
@@ -176,7 +178,7 @@ public class DeobfuscatorFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				if(transformerJList.getSelectedValue() != null)
+				if(!transformerJList.isSelectionEmpty())
 					selectedTransformers.add(selectedTransformers.size(), transformerJList.getSelectedValue());
 			}
 		});
@@ -190,7 +192,7 @@ public class DeobfuscatorFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
-				if(selectedTransformersJList.getSelectedValue() != null)
+				if(!selectedTransformersJList.isSelectionEmpty())
 					selectedTransformers.remove(selectedTransformersJList.getSelectedIndex());
 			}
 		});
@@ -204,6 +206,52 @@ public class DeobfuscatorFrame
         lblTransformersSelected.setBounds(323, 6, 133, 14);
         transformers.add(lblTransformersSelected);
         tabbedPane.addTab("Libraries", libraries);
+        
+        JScrollPane scrollPane = new JScrollPane();
+        scrollPane.setBounds(10, 11, 386, 177);
+        libraries.add(scrollPane);
+        
+        librariesList = new DefaultListModel<String>();
+        JList<String> libraryList = new JList<>(librariesList);
+        libraryList.setToolTipText("<html>The library list is here.<br>\r\nYou can choose folders or files to add. If you choose a folder,<br>\r\nall the non-folder contents will be added as a library.<br>\r\nKeep in mind that folders in the folder you selected will be ignored,<br>\r\nand all the content inside them will be ignored too.</html>");
+        scrollPane.setViewportView(libraryList);
+        
+        JButton btnAdd = new JButton("Add");
+        btnAdd.setToolTipText("Adds a library.");
+        btnAdd.setBounds(406, 38, 89, 23);
+        libraries.add(btnAdd);
+        btnAdd.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				JFileChooser library = new JFileChooser();
+				library.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+				if(libraryPath != null)
+					library.setSelectedFile(libraryPath);
+				int action = library.showOpenDialog(null);
+				if(action == JFileChooser.APPROVE_OPTION)
+				{
+					libraryPath = library.getSelectedFile();
+					String path = library.getSelectedFile().toString();
+					librariesList.addElement(path);
+				}
+			}
+		});
+        
+        JButton btnDelete = new JButton("Delete");
+        btnDelete.setToolTipText("Deletes a library.");
+        btnDelete.setBounds(406, 107, 89, 23);
+        libraries.add(btnDelete);
+        btnDelete.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				if(!libraryList.isSelectionEmpty())
+					librariesList.remove(libraryList.getSelectedIndex());
+			}
+		});
         
         JLabel lblInput = new JLabel("Input:");
         lblInput.setToolTipText("<html>Select your file to deobfuscate here.</html>");
