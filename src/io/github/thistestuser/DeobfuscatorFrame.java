@@ -16,7 +16,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class DeobfuscatorFrame
 {
-	private static final String VERSION = "1.0-alpha";
+	private static final String VERSION = "1.0-beta";
 	private JFrame frame;
 	private JTextField deobfuscatorField;
 	private File deobfuscatorPath;
