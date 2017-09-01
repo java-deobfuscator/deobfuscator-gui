@@ -7,6 +7,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.PrintStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -312,6 +314,58 @@ public class DeobfuscatorFrame
 					String path = outputFile.getSelectedFile().toString();
 					outputField.setText(path);
 				}
+			}
+		});
+        
+        JButton btnLoadConfig = new JButton("Load Config");
+        btnLoadConfig.setBounds(10, 474, 89, 26);
+        frame.getContentPane().add(btnLoadConfig);
+        
+        JButton btnSaveConfig = new JButton("Save Config");
+        btnSaveConfig.setBounds(117, 474, 99, 26);
+        frame.getContentPane().add(btnSaveConfig);
+        
+        JButton btnRun = new JButton("Run");
+        btnRun.setBounds(465, 474, 89, 23);
+        frame.getContentPane().add(btnRun);
+        btnRun.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				//Converts the above into args
+				String input = "-input " + inputField.getText();
+				String output = "-output " + outputField.getText();
+				String transformers = "";
+				for(int i = 0; i < selectedTransformers.getSize(); i++)
+					transformers += "-transformer " + selectedTransformers.get(i) + " ";
+				if(transformers.length() > 2)
+					transformers = transformers.substring(0, transformers.length() - 2);
+				String libraries = "";
+				for(int i = 0; i < librariesList.getSize(); i++)
+					libraries += "-path " + librariesList.get(i) + " ";
+				if(libraries.length() > 2)
+					libraries = libraries.substring(0, libraries.length() - 2);
+				//Start
+				ProcessBuilder builder = new ProcessBuilder("java","-jar", 
+					deobfuscatorField.getText(), input, output, transformers, libraries); 
+				try 
+				{
+					JFrame newFrame = new JFrame();
+					newFrame.setTitle("Console");
+					JTextArea area = new JTextArea();
+					TextOutputStream stream = new TextOutputStream(area);
+			        PrintStream printStream = new PrintStream(stream);
+			        System.setOut(printStream);
+			        System.setErr(printStream);
+			        newFrame.add(new JScrollPane(area));
+			        newFrame.pack();
+			        newFrame.setVisible(true);
+		            builder.start();
+		        } catch (IOException e1) 
+				{
+		            e1.printStackTrace();
+		        }
 			}
 		});
 	}
