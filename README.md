@@ -8,6 +8,8 @@ It plans to make deobfuscating simple by having a UI, instead of having to deal 
 
 I currently use WindowBuilder to create the GUI: https://eclipse.org/windowbuilder/
 
+Any issues, suggestions, or pull requests are very welcome!
+
 ## How to Use 
 1. Download the GUI from the releases page.
 2. Download the deobfuscator.jar from https://github.com/java-deobfuscator/deobfuscator.
@@ -18,5 +20,5 @@ I currently use WindowBuilder to create the GUI: https://eclipse.org/windowbuild
 - [x] Input and output jar selection
 - [x] Load and select transformers from deobfuscator jar (double text panels to fix order)
 - [x] A list of libraries that can be loaded (manageable with add, remove)
-- [ ] Input and output command equivalent (that can be run via command prompt)
+- [x] Input and output command equivalent (that can be run via command prompt)
 - [x] A console that can be used to check errors
