@@ -18,5 +18,5 @@ I currently use WindowBuilder to create the GUI: https://eclipse.org/windowbuild
 - [x] Input and output jar selection
 - [x] Load and select transformers from deobfuscator jar (double text panels to fix order)
 - [x] A list of libraries that can be loaded (manageable with add, remove)
-- [ ] Input and output command equivalent (that can be run with deobfuscator.jar)
+- [ ] Input and output command equivalent (that can be run via command prompt)
 - [x] A console that can be used to check errors
