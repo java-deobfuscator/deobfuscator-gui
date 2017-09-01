@@ -10,6 +10,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.ProcessBuilder.Redirect;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -334,41 +336,45 @@ public class DeobfuscatorFrame
 			public void actionPerformed(ActionEvent e)
 			{
 				//Converts the above into args
-				String input = "-input " + inputField.getText();
-				String output = "-output " + outputField.getText();
-				String transformers = "";
+				List<String> command = new ArrayList<>();
+				command.add("java");
+				command.add("-jar");
+				command.add(deobfuscatorField.getText());
+				command.add("-input");
+				command.add(inputField.getText());
+				command.add("-output");
+				command.add(outputField.getText());
 				for(int i = 0; i < selectedTransformers.getSize(); i++)
-					transformers += "-transformer " + selectedTransformers.get(i) + " ";
-				if(transformers.length() > 2)
-					transformers = transformers.substring(0, transformers.length() - 1);
-				String libraries = "";
+				{
+					command.add("-transformer");
+					command.add(selectedTransformers.get(i));
+				}
 				for(int i = 0; i < librariesList.getSize(); i++)
-					libraries += "-path " + librariesList.get(i) + " ";
-				if(libraries.length() > 2)
-					libraries = libraries.substring(0, libraries.length() - 1);
+				{
+					command.add("-path");
+					command.add(librariesList.get(i));
+				}
 				//Start
-				ProcessBuilder builder = new ProcessBuilder("java", "-jar", 
-					deobfuscatorField.getText(), input, output, transformers, libraries);
-				builder.redirectErrorStream(true);
-	            builder.redirectOutput(Redirect.INHERIT);
+				ProcessBuilder builder = new ProcessBuilder(command);
+	            builder.inheritIO();
+				JFrame newFrame = new JFrame();
+				newFrame.setTitle("Console");
+				JTextArea area = new JTextArea();
+				TextOutputStream stream = new TextOutputStream(area);
+		        PrintStream printStream = new PrintStream(stream);
+		        System.setOut(printStream);
+		        System.setErr(printStream);
+		        newFrame.add(new JScrollPane(area));
+		        newFrame.pack();
+		        newFrame.setSize(800, 600);
+		        newFrame.setVisible(true);
 				try 
 				{
-					JFrame newFrame = new JFrame();
-					newFrame.setTitle("Console");
-					JTextArea area = new JTextArea();
-					TextOutputStream stream = new TextOutputStream(area);
-			        PrintStream printStream = new PrintStream(stream);
-			        System.setOut(printStream);
-			        System.setErr(printStream);
-			        newFrame.add(new JScrollPane(area));
-			        newFrame.pack();
-			        newFrame.setSize(800, 600);
-			        newFrame.setVisible(true);
-		            builder.start();
+			        builder.start();
 		        }catch(IOException e1) 
 				{
 		            e1.printStackTrace();
-		        }
+				}
 			}
 		});
 	}
