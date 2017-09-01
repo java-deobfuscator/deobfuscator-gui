@@ -9,6 +9,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -26,7 +28,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class DeobfuscatorFrame
 {
-	private static final String VERSION = "1.0";
+	private static final String VERSION = "1.1";
 	private JFrame frame;
 	private JTextField deobfuscatorField;
 	private File deobfuscatorPath;
@@ -490,6 +492,7 @@ public class DeobfuscatorFrame
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
+				btnRun.setEnabled(false);
 				// Converts the above into args
 				List<String> command = new ArrayList<>();
 				command.add("java");
@@ -514,10 +517,20 @@ public class DeobfuscatorFrame
 				JFrame newFrame = new JFrame();
 				newFrame.setTitle("Console");
 				JTextArea area = new JTextArea();
+				area.setEditable(false);
 				newFrame.getContentPane().add(new JScrollPane(area));
 				newFrame.pack();
 				newFrame.setSize(800, 600);
 				newFrame.setVisible(true);
+				newFrame.addWindowListener(new WindowAdapter()
+		        {
+		            @Override
+		            public void windowClosing(WindowEvent e)
+		            {
+		            	btnRun.setEnabled(true);
+		                e.getWindow().dispose();
+		            }
+		        });
 				new SwingWorker<Void, String>()
 				{
 					@Override
