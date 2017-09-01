@@ -5,6 +5,8 @@ import java.awt.EventQueue;
 import java.awt.Font;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -101,7 +103,7 @@ public class DeobfuscatorFrame
 		frame.getContentPane().add(deobfuscatorArguments);
 		
 		JLabel successOrFail = new JLabel("Select deobfuscator.jar to begin!");
-		successOrFail.setBounds(166, 70, 181, 14);
+		successOrFail.setBounds(203, 70, 181, 14);
 		frame.getContentPane().add(successOrFail);
 		
 		JButton selectDeob = new JButton("Select");
@@ -156,6 +158,20 @@ public class DeobfuscatorFrame
 			"<html>Here you will select the transformers to run.<br>\r\nIf you see no transformers, you have not loaded deobfuscator.jar<br>\r\nor your jar file is corrupt.</html>");
 		transformerJList.setBounds(10, 23, 179, 165);
 		transformerJList.setModel(transformerList);
+		transformerJList.addMouseListener(new MouseAdapter() 
+		{
+			@Override
+		    public void mouseClicked(MouseEvent e) 
+		    {
+				JList<String> list = (JList<String>)e.getSource();
+		        if(e.getClickCount() == 2) 
+		        {
+		            int index = list.locationToIndex(e.getPoint());
+		            selectedTransformers.add(selectedTransformers.size(),
+						transformerList.getElementAt(index));
+		        }
+		    }
+		});
 		transformerListScroll.setViewportView(transformerJList);
 		transformerListScroll.setBounds(transformerJList.getBounds());
 		transformers.add(transformerListScroll);
@@ -214,6 +230,18 @@ public class DeobfuscatorFrame
 		JLabel lblTransformersSelected = new JLabel("Transformers Selected");
 		lblTransformersSelected.setBounds(323, 6, 133, 14);
 		transformers.add(lblTransformersSelected);
+		
+		JButton btnDeselectAll = new JButton("Deselect All");
+		btnDeselectAll.setBounds(213, 153, 89, 23);
+		btnDeselectAll.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				selectedTransformers.clear();
+			}
+		});
+		transformers.add(btnDeselectAll);
 		tabbedPane.addTab("Libraries", libraries);
 		
 		JScrollPane scrollPane = new JScrollPane();
@@ -329,12 +357,71 @@ public class DeobfuscatorFrame
 		});
 		
 		JButton btnLoadConfig = new JButton("Load Config");
-		btnLoadConfig.setBounds(10, 474, 89, 26);
+		btnLoadConfig.setBounds(26, 474, 89, 26);
 		frame.getContentPane().add(btnLoadConfig);
+		btnLoadConfig.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				JFrame newFrame = new JFrame();
+				newFrame.setTitle("Load Config");
+				newFrame.setBounds(100, 100, 450, 150);
+				newFrame.getContentPane().setLayout(null);
+				
+				JLabel lblPasteYourCommand = new JLabel("<html>Paste your command that you use to run java-deobfuscator here.<br>\r\nThis should be the command you paste via the command line.</html>");
+				lblPasteYourCommand.setBounds(10, 11, 379, 34);
+				newFrame.getContentPane().add(lblPasteYourCommand);
+				
+				JTextField command = new JTextField();
+				command.setBounds(20, 56, 369, 20);
+				command.setColumns(10);
+				newFrame.getContentPane().add(command);
+				
+				JButton btnSubmit = new JButton("Submit");
+				btnSubmit.setBounds(157, 77, 89, 23);
+				newFrame.getContentPane().add(btnSubmit);
+				newFrame.setVisible(true);
+				btnSubmit.addActionListener(new ActionListener()
+				{
+					@Override
+					public void actionPerformed(ActionEvent e)
+					{
+						String args = command.getText();
+						String[] split = args.split(" ");
+						for(int i = 0; i < split.length; i++)
+						{
+							String arg = split[i];
+							if(arg.equals("-jar") && split.length > i + 1)
+							{
+								deobfuscatorField.setText(split[i + 1]);
+								loadTransformers(split[i + 1], successOrFail);
+							}else if(arg.equals("-input") && split.length > i + 1)
+								inputField.setText(split[i + 1]);
+							else if(arg.equals("-output") && split.length > i + 1)
+								outputField.setText(split[i + 1]);
+							else if(arg.equals("-transformer") && split.length > i + 1)
+								selectedTransformers.addElement(split[i + 1]);
+							else if(arg.equals("-path") && split.length > i + 1)
+								librariesList.addElement(split[i + 1]);
+							newFrame.dispose();
+						}
+					}
+				});
+			}
+		});
 		
 		JButton btnSaveConfig = new JButton("Save Config");
-		btnSaveConfig.setBounds(117, 474, 99, 26);
+		btnSaveConfig.setBounds(130, 474, 99, 26);
 		frame.getContentPane().add(btnSaveConfig);
+		btnSaveConfig.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				
+			}
+		});
 		
 		JButton btnRun = new JButton("Run");
 		btnRun.setBounds(465, 474, 89, 23);
@@ -368,7 +455,7 @@ public class DeobfuscatorFrame
 				JFrame newFrame = new JFrame();
 				newFrame.setTitle("Console");
 				JTextArea area = new JTextArea();
-				newFrame.add(new JScrollPane(area));
+				newFrame.getContentPane().add(new JScrollPane(area));
 				newFrame.pack();
 				newFrame.setSize(800, 600);
 				newFrame.setVisible(true);
@@ -433,7 +520,7 @@ public class DeobfuscatorFrame
 		{
 			e.printStackTrace();
 			displayLabel
-				.setText("Failed to load transformers (corrupted jar?)");
+				.setText("Failed to load transformers!");
 			displayLabel.setForeground(Color.red);
 		}
 	}
