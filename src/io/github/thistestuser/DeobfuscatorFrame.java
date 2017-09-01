@@ -13,6 +13,8 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -388,22 +390,25 @@ public class DeobfuscatorFrame
 					public void actionPerformed(ActionEvent e)
 					{
 						String args = command.getText();
-						String[] split = args.split(" ");
-						for(int i = 0; i < split.length; i++)
+						Matcher matcher = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(args);
+						List<String> split = new ArrayList<>();
+						while(matcher.find())
+							split.add(matcher.group(1).replace("\"", ""));
+						for(int i = 0; i < split.size(); i++)
 						{
-							String arg = split[i];
-							if(arg.equals("-jar") && split.length > i + 1)
+							String arg = split.get(i);
+							if(arg.equals("-jar") && split.size() > i + 1)
 							{
-								deobfuscatorField.setText(split[i + 1]);
-								loadTransformers(split[i + 1], successOrFail);
-							}else if(arg.equals("-input") && split.length > i + 1)
-								inputField.setText(split[i + 1]);
-							else if(arg.equals("-output") && split.length > i + 1)
-								outputField.setText(split[i + 1]);
-							else if(arg.equals("-transformer") && split.length > i + 1)
-								selectedTransformers.addElement(split[i + 1]);
-							else if(arg.equals("-path") && split.length > i + 1)
-								librariesList.addElement(split[i + 1]);
+								deobfuscatorField.setText(split.get(i + 1));
+								loadTransformers(split.get(i + 1), successOrFail);
+							}else if(arg.equals("-input") && split.size() > i + 1)
+								inputField.setText(split.get(i + 1));
+							else if(arg.equals("-output") && split.size() > i + 1)
+								outputField.setText(split.get(i + 1));
+							else if(arg.equals("-transformer") && split.size() > i + 1)
+								selectedTransformers.addElement(split.get(i + 1));
+							else if(arg.equals("-path") && split.size() > i + 1)
+								librariesList.addElement(split.get(i + 1));
 							newFrame.dispose();
 						}
 					}
