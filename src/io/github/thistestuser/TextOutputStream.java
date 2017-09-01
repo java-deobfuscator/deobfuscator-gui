@@ -12,6 +12,7 @@ public class TextOutputStream extends OutputStream
 	public TextOutputStream(JTextArea textArea)
 	{
 		this.textArea = textArea;
+		textArea.setEditable(false);
 	}
 	
 	@Override

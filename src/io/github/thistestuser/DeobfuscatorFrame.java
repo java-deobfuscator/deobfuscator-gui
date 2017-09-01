@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.ProcessBuilder.Redirect;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
@@ -18,14 +19,13 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class DeobfuscatorFrame
 {
-	private static final String VERSION = "1.0-beta";
+	private static final String VERSION = "1.0";
 	private JFrame frame;
 	private JTextField deobfuscatorField;
 	private File deobfuscatorPath;
 	private JTextField inputField;
-	private File inputPath;
+	private File inputOutputPath;
 	private JTextField outputField;
-	private File outputPath;
 	private DefaultListModel<String> transformerList;
 	private DefaultListModel<String> selectedTransformers;
 	private JList<String> transformerJList;
@@ -284,12 +284,12 @@ public class DeobfuscatorFrame
 			public void actionPerformed(ActionEvent e)
 			{
 				JFileChooser inputFile = new JFileChooser();
-				if(inputPath != null)
-					inputFile.setSelectedFile(inputPath);
+				if(inputOutputPath != null)
+					inputFile.setSelectedFile(inputOutputPath);
 				int action = inputFile.showOpenDialog(null);
 				if(action == JFileChooser.APPROVE_OPTION)
 				{
-					inputPath = inputFile.getSelectedFile();
+					inputOutputPath = inputFile.getSelectedFile();
 					String path = inputFile.getSelectedFile().toString();
 					inputField.setText(path);
 				}
@@ -305,12 +305,12 @@ public class DeobfuscatorFrame
 			public void actionPerformed(ActionEvent e)
 			{
 				JFileChooser outputFile = new JFileChooser();
-				if(outputPath != null)
-					outputFile.setSelectedFile(outputPath);
+				if(inputOutputPath != null)
+					outputFile.setSelectedFile(inputOutputPath);
 				int action = outputFile.showOpenDialog(null);
 				if(action == JFileChooser.APPROVE_OPTION)
 				{
-					outputPath = outputFile.getSelectedFile();
+					inputOutputPath = outputFile.getSelectedFile();
 					String path = outputFile.getSelectedFile().toString();
 					outputField.setText(path);
 				}
@@ -340,15 +340,17 @@ public class DeobfuscatorFrame
 				for(int i = 0; i < selectedTransformers.getSize(); i++)
 					transformers += "-transformer " + selectedTransformers.get(i) + " ";
 				if(transformers.length() > 2)
-					transformers = transformers.substring(0, transformers.length() - 2);
+					transformers = transformers.substring(0, transformers.length() - 1);
 				String libraries = "";
 				for(int i = 0; i < librariesList.getSize(); i++)
 					libraries += "-path " + librariesList.get(i) + " ";
 				if(libraries.length() > 2)
-					libraries = libraries.substring(0, libraries.length() - 2);
+					libraries = libraries.substring(0, libraries.length() - 1);
 				//Start
-				ProcessBuilder builder = new ProcessBuilder("java","-jar", 
-					deobfuscatorField.getText(), input, output, transformers, libraries); 
+				ProcessBuilder builder = new ProcessBuilder("java", "-jar", 
+					deobfuscatorField.getText(), input, output, transformers, libraries);
+				builder.redirectErrorStream(true);
+	            builder.redirectOutput(Redirect.INHERIT);
 				try 
 				{
 					JFrame newFrame = new JFrame();
@@ -360,9 +362,10 @@ public class DeobfuscatorFrame
 			        System.setErr(printStream);
 			        newFrame.add(new JScrollPane(area));
 			        newFrame.pack();
+			        newFrame.setSize(800, 600);
 			        newFrame.setVisible(true);
 		            builder.start();
-		        } catch (IOException e1) 
+		        }catch(IOException e1) 
 				{
 		            e1.printStackTrace();
 		        }
