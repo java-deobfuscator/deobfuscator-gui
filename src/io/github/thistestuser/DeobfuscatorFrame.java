@@ -3,6 +3,8 @@ package io.github.thistestuser;
 import java.awt.Color;
 import java.awt.EventQueue;
 import java.awt.Font;
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -394,6 +396,11 @@ public class DeobfuscatorFrame
 						List<String> split = new ArrayList<>();
 						while(matcher.find())
 							split.add(matcher.group(1).replace("\"", ""));
+						deobfuscatorField.setText("");
+						inputField.setText("");
+						outputField.setText("");
+						selectedTransformers.clear();
+						librariesList.clear();
 						for(int i = 0; i < split.size(); i++)
 						{
 							String arg = split.get(i);
@@ -409,22 +416,69 @@ public class DeobfuscatorFrame
 								selectedTransformers.addElement(split.get(i + 1));
 							else if(arg.equals("-path") && split.size() > i + 1)
 								librariesList.addElement(split.get(i + 1));
-							newFrame.dispose();
 						}
+						newFrame.dispose();
 					}
 				});
 			}
 		});
 		
-		JButton btnSaveConfig = new JButton("Save Config");
-		btnSaveConfig.setBounds(130, 474, 99, 26);
-		frame.getContentPane().add(btnSaveConfig);
-		btnSaveConfig.addActionListener(new ActionListener()
+		JButton btnCopyConfig = new JButton("Copy Config");
+		btnCopyConfig.setBounds(130, 474, 99, 26);
+		frame.getContentPane().add(btnCopyConfig);
+		btnCopyConfig.addActionListener(new ActionListener()
 		{
 			@Override
 			public void actionPerformed(ActionEvent e)
 			{
+				JFrame newFrame = new JFrame();
+				newFrame.setTitle("Copy Config");
+				newFrame.setBounds(100, 100, 450, 200);
+				newFrame.getContentPane().setLayout(null);
 				
+				JLabel lblCopyYourCommand = new JLabel("<html>Copy the command below and execute it via\r\nyour command executor to run it.</html>");
+				lblCopyYourCommand.setBounds(10, 11, 379, 34);
+				newFrame.getContentPane().add(lblCopyYourCommand);
+				
+				JScrollPane scrollPane = new JScrollPane();
+				JTextPane textPane = new JTextPane();
+				textPane.setBounds(20, 42, 369, 70);
+				textPane.setEditable(false);
+				scrollPane.setViewportView(textPane);
+				scrollPane.setBounds(textPane.getBounds());
+				newFrame.getContentPane().add(scrollPane);
+				
+				//Write args
+				StringBuilder builder = new StringBuilder();
+				builder.append("java -jar");
+				builder.append(" \"" + deobfuscatorField.getText() + "\"");
+				builder.append(" -input " + "\"" + inputField.getText() + "\"");
+				builder.append(" -output " + "\"" + outputField.getText() + "\"");
+				for(Object o : selectedTransformers.toArray())
+				{
+					String transformer = (String)o;
+					builder.append(" -transformer " + transformer);
+				}
+				for(Object o : librariesList.toArray())
+				{
+					String library = (String)o;
+					builder.append(" -path " + "\""  + library + "\"");
+				}
+				textPane.setText(builder.toString());
+				
+				JButton btnCopy = new JButton("Copy");
+				btnCopy.setBounds(170, 127, 89, 23);
+				newFrame.getContentPane().add(btnCopy);
+				btnCopy.addActionListener(new ActionListener()
+				{
+					@Override
+					public void actionPerformed(ActionEvent e)
+					{
+						Toolkit.getDefaultToolkit().
+							getSystemClipboard().setContents(new StringSelection(textPane.getText()), null);
+					}
+				});
+				newFrame.setVisible(true);
 			}
 		});
 		
