@@ -28,7 +28,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class DeobfuscatorFrame
 {
-	private static final String VERSION = "1.1";
+	private static final String VERSION = "1.2";
 	private JFrame frame;
 	private JTextField deobfuscatorField;
 	private File deobfuscatorPath;
@@ -80,6 +80,7 @@ public class DeobfuscatorFrame
 		frame = new JFrame();
 		frame.getContentPane().setFont(new Font("Tahoma", Font.PLAIN, 11));
 		frame.setBounds(100, 100, 580, 560);
+		frame.setResizable(false);
 		frame.setTitle("Deobfuscator-GUI " + VERSION + " By ThisTestUser");
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.getContentPane().setLayout(null);
@@ -373,6 +374,7 @@ public class DeobfuscatorFrame
 				JFrame newFrame = new JFrame();
 				newFrame.setTitle("Load Config");
 				newFrame.setBounds(100, 100, 450, 150);
+				newFrame.setResizable(false);
 				newFrame.getContentPane().setLayout(null);
 				
 				JLabel lblPasteYourCommand = new JLabel("<html>Paste your command that you use to run java-deobfuscator here.<br>\r\nThis should be the command you paste via the command line.</html>");
@@ -436,6 +438,7 @@ public class DeobfuscatorFrame
 				JFrame newFrame = new JFrame();
 				newFrame.setTitle("Copy Config");
 				newFrame.setBounds(100, 100, 450, 200);
+				newFrame.setResizable(false);
 				newFrame.getContentPane().setLayout(null);
 				
 				JLabel lblCopyYourCommand = new JLabel("<html>Copy the command below and execute it via\r\nyour command executor to run it.</html>");
@@ -522,16 +525,7 @@ public class DeobfuscatorFrame
 				newFrame.pack();
 				newFrame.setSize(800, 600);
 				newFrame.setVisible(true);
-				newFrame.addWindowListener(new WindowAdapter()
-		        {
-		            @Override
-		            public void windowClosing(WindowEvent e)
-		            {
-		            	btnRun.setEnabled(true);
-		                e.getWindow().dispose();
-		            }
-		        });
-				new SwingWorker<Void, String>()
+				SwingWorker<Void, String> worker = new SwingWorker<Void, String>()
 				{
 					@Override
 					protected Void doInBackground() throws Exception
@@ -555,7 +549,18 @@ public class DeobfuscatorFrame
 							area.append("\n");
 						}
 					}
-				}.execute();
+				};
+				worker.execute();
+				newFrame.addWindowListener(new WindowAdapter()
+		        {
+		            @Override
+		            public void windowClosing(WindowEvent e)
+		            {
+		            	btnRun.setEnabled(true);
+		            	worker.cancel(true);
+		                e.getWindow().dispose();
+		            }
+		        });
 			}
 		});
 	}
