@@ -28,7 +28,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class DeobfuscatorFrame
 {
-	private static final String VERSION = "1.2";
+	private static final String VERSION = "1.2.1";
 	private JFrame frame;
 	private JTextField deobfuscatorField;
 	private File deobfuscatorPath;
@@ -41,6 +41,7 @@ public class DeobfuscatorFrame
 	private JList<String> selectedTransformersJList;
 	private DefaultListModel<String> librariesList;
 	private File libraryPath;
+	private Process process;
 	
 	/**
 	 * Launch the application.
@@ -532,6 +533,7 @@ public class DeobfuscatorFrame
 					{
 						builder.redirectErrorStream(true);
 						Process process = builder.start();
+						DeobfuscatorFrame.this.process = process;
 						BufferedReader reader = new BufferedReader(
 							new InputStreamReader(process.getInputStream()));
 						String line;
@@ -558,6 +560,11 @@ public class DeobfuscatorFrame
 		            {
 		            	btnRun.setEnabled(true);
 		            	worker.cancel(true);
+		            	if(process != null)
+		            	{
+		            		process.destroyForcibly();
+		            		process = null;
+		            	}
 		                e.getWindow().dispose();
 		            }
 		        });
