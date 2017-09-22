@@ -457,9 +457,18 @@ public class DeobfuscatorFrame
 				//Write args
 				StringBuilder builder = new StringBuilder();
 				builder.append("java -jar");
-				builder.append(" \"" + deobfuscatorField.getText() + "\"");
-				builder.append(" -input " + "\"" + inputField.getText() + "\"");
-				builder.append(" -output " + "\"" + outputField.getText() + "\"");
+				if(deobfuscatorField.getText().split(" ").length > 1)
+					builder.append(" \"" + deobfuscatorField.getText() + "\"");
+				else
+					builder.append(" " + deobfuscatorField.getText());
+				if(inputField.getText().split(" ").length > 1)
+					builder.append(" -input " + "\"" + inputField.getText() + "\"");
+				else
+					builder.append(" -input " + inputField.getText());
+				if(outputField.getText().split(" ").length > 1)
+					builder.append(" -output " + "\"" + outputField.getText() + "\"");
+				else
+					builder.append(" -output " + outputField.getText());
 				for(Object o : selectedTransformers.toArray())
 				{
 					String transformer = (String)o;
@@ -468,7 +477,10 @@ public class DeobfuscatorFrame
 				for(Object o : librariesList.toArray())
 				{
 					String library = (String)o;
-					builder.append(" -path " + "\""  + library + "\"");
+					if(library.split(" ").length > 1)	
+						builder.append(" -path " + "\""  + library + "\"");
+					else
+						builder.append(" -path " + library);
 				}
 				textPane.setText(builder.toString());
 				
