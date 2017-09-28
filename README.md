@@ -2,8 +2,6 @@
 # deobfuscator-gui
 An awesome GUI for an awesome deobfuscator
 
-Select deobfuscator-gui.jar. The latest version works the best.
-
 ## What is Deobfuscator-GUI?
 Deobfuscator-GUI is a GUI for the deobfuscator located at https://github.com/java-deobfuscator/deobfuscator.
 
