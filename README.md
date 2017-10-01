@@ -1,4 +1,4 @@
-[![latest release](https://img.shields.io/github/release/ThisTestUser/deobfuscator-gui.svg?label=latest%20release)](https://github.com/ThisTestUser/deobfuscator-gui/releases/latest)
+[![latest release](https://img.shields.io/github/release/java-deobfuscator/deobfuscator-gui.svg?label=latest%20release)](https://github.com/java-deobfuscator/deobfuscator-gui/releases/latest)
 # deobfuscator-gui
 An awesome GUI for an awesome deobfuscator
 
@@ -14,7 +14,7 @@ Any issues, suggestions, or pull requests are very welcome!
 NOTE: This issue tracker is only for things related to the GUI, not the deobfuscator.
 
 ## How to Use 
-1. Download the GUI from the releases page. (https://github.com/ThisTestUser/deobfuscator-gui/releases/latest)
+1. Download the GUI from the releases page. (https://github.com/java-deobfuscator/deobfuscator-gui/releases/latest)
 2. Download the deobfuscator.jar from https://github.com/java-deobfuscator/deobfuscator.
 3. Follow the program instructions.
 
