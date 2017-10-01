@@ -28,7 +28,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class DeobfuscatorFrame
 {
-	private static final String VERSION = "1.2.1";
+	private static final String VERSION = "1.3";
 	private JFrame frame;
 	private JTextField deobfuscatorField;
 	private File deobfuscatorPath;
