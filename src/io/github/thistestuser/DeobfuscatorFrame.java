@@ -549,6 +549,7 @@ public class DeobfuscatorFrame
 				System.setErr(print);
 				System.setOut(print);
 				// Runs it using reflection
+				loadTransformers(deobfuscatorField.getText(), successOrFail);
 				if(DEOBFUSCATOR_VERSION == DeobfuscatorVersion.NEW)
 				{
 					thread = new Thread(new Runnable() 
