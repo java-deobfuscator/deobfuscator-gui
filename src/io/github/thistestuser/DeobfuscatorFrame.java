@@ -11,9 +11,11 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.URL;
@@ -51,6 +53,7 @@ public class DeobfuscatorFrame
 	private DefaultListModel<String> librariesList;
 	private File libraryPath;
 	private Thread thread;
+	private Process process;
 	
 	/**
 	 * The singleton instance of URLClassLoader
@@ -63,7 +66,6 @@ public class DeobfuscatorFrame
 	private List<Class<?>> transformerClasses =  new ArrayList<>();
 	
 	/**
-	 * If it is legacy mode, has Deobfuscator.class and Transformer.class
 	 * If its new mode, has Deobfuscator.class, Configuration.class, TransformerConfigDeserializer.class, and Transformer.class
 	 */
 	private Class<?>[] loadClasses;
@@ -594,10 +596,80 @@ public class DeobfuscatorFrame
 							{
 								e.printStackTrace(print);
 							}
-							
 						}else
 						{
-							
+							btnRun.setEnabled(false);
+							// Converts the above into args
+							List<String> command = new ArrayList<>();
+							command.add("java");
+							command.add("-jar");
+							command.add(deobfuscatorField.getText());
+							command.add("-input");
+							command.add(inputField.getText());
+							command.add("-output");
+							command.add(outputField.getText());
+							for(int i = 0; i < selectedTransformers.getSize(); i++)
+							{
+								command.add("-transformer");
+								command.add(selectedTransformers.get(i));
+							}
+							for(int i = 0; i < librariesList.getSize(); i++)
+							{
+								command.add("-path");
+								command.add(librariesList.get(i));
+							}
+							// Start
+							ProcessBuilder builder = new ProcessBuilder(command);
+							JFrame newFrame = new JFrame();
+							newFrame.setTitle("Console");
+							JTextArea area = new JTextArea();
+							area.setEditable(false);
+							newFrame.getContentPane().add(new JScrollPane(area));
+							newFrame.pack();
+							newFrame.setSize(800, 600);
+							newFrame.setVisible(true);
+							SwingWorker<Void, String> worker = new SwingWorker<Void, String>()
+							{
+								@Override
+								protected Void doInBackground() throws Exception
+								{
+									builder.redirectErrorStream(true);
+									Process process = builder.start();
+									DeobfuscatorFrame.this.process = process;
+									BufferedReader reader = new BufferedReader(
+										new InputStreamReader(process.getInputStream()));
+									String line;
+									while((line = reader.readLine()) != null)
+										publish(line);
+									return null;
+								}
+								
+								@Override
+								protected void process(List<String> chunks)
+								{
+									for(String line : chunks)
+									{
+										area.append(line);
+										area.append("\n");
+									}
+								}
+							};
+							worker.execute();
+							newFrame.addWindowListener(new WindowAdapter()
+					        {
+					            @Override
+					            public void windowClosing(WindowEvent e)
+					            {
+					            	btnRun.setEnabled(true);
+					            	worker.cancel(true);
+					            	if(process != null)
+					            	{
+					            		process.destroyForcibly();
+					            		process = null;
+					            	}
+					                e.getWindow().dispose();
+					            }
+					        });
 						}
 					}
 				});
@@ -665,13 +737,6 @@ public class DeobfuscatorFrame
 						DEOBFUSCATOR_VERSION = DeobfuscatorVersion.NEW;
 					}
 				}
-			if(DEOBFUSCATOR_VERSION == DeobfuscatorVersion.LEGACY)
-			{
-				loadClasses = new Class<?>[2];
-				loadClasses[0] = new URLClassLoader(new URL[]{new URL(path)}).
-					loadClass("com.javadeobfuscator.deobfuscator.Deobfuscator");
-				loadClasses[1] = loader.loadClass("com.javadeobfuscator.deobfuscator.transformers.Transformer");
-			}
 			zip.close();
 			displayLabel.setText("Successfully loaded transformers!");
 			displayLabel.setForeground(Color.GREEN);
