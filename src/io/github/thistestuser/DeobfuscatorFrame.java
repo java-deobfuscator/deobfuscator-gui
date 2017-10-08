@@ -598,6 +598,7 @@ public class DeobfuscatorFrame
 							}
 						}
 					});
+					thread.start();
 					newFrame.addWindowListener(new WindowAdapter()
 			        {
 			            @Override
