@@ -642,6 +642,7 @@ public class DeobfuscatorFrame
 			            	{
 			            		thread.stop();
 			            		thread = null;
+			            		System.gc();
 			            	}
 			                e.getWindow().dispose();
 			            }
