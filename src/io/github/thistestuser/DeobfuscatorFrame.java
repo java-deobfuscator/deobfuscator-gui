@@ -33,7 +33,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class DeobfuscatorFrame
 {
-	private static final String VERSION = "2.0";
+	private static final String VERSION = "2.0-BETA";
 	
 	/**
 	 * New - Latest API
