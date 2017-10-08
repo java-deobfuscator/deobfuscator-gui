@@ -11,10 +11,13 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.InputStreamReader;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -28,7 +31,13 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class DeobfuscatorFrame
 {
-	private static final String VERSION = "1.3";
+	private static final String VERSION = "2.0";
+	
+	/**
+	 * New - Latest API
+	 * Legacy - Old API
+	 */
+	private static DeobfuscatorVersion DEOBFUSCATOR_VERSION = DeobfuscatorVersion.UNKNOWN;
 	private JFrame frame;
 	private JTextField deobfuscatorField;
 	private File deobfuscatorPath;
@@ -41,7 +50,23 @@ public class DeobfuscatorFrame
 	private JList<String> selectedTransformersJList;
 	private DefaultListModel<String> librariesList;
 	private File libraryPath;
-	private Process process;
+	private Thread thread;
+	
+	/**
+	 * The singleton instance of URLClassLoader
+	 */
+	private URLClassLoader loader;
+	
+	/**
+	 * A list of transformers in this deobfuscator
+	 */
+	private List<Class<?>> transformerClasses =  new ArrayList<>();
+	
+	/**
+	 * If it is legacy mode, has Deobfuscator.class and Transformer.class
+	 * If its new mode, has Deobfuscator.class, Configuration.class, TransformerConfigDeserializer.class, and Transformer.class
+	 */
+	private Class<?>[] loadClasses;
 	
 	/**
 	 * Launch the application.
@@ -509,27 +534,7 @@ public class DeobfuscatorFrame
 			public void actionPerformed(ActionEvent e)
 			{
 				btnRun.setEnabled(false);
-				// Converts the above into args
-				List<String> command = new ArrayList<>();
-				command.add("java");
-				command.add("-jar");
-				command.add(deobfuscatorField.getText());
-				command.add("-input");
-				command.add(inputField.getText());
-				command.add("-output");
-				command.add(outputField.getText());
-				for(int i = 0; i < selectedTransformers.getSize(); i++)
-				{
-					command.add("-transformer");
-					command.add(selectedTransformers.get(i));
-				}
-				for(int i = 0; i < librariesList.getSize(); i++)
-				{
-					command.add("-path");
-					command.add(librariesList.get(i));
-				}
 				// Start
-				ProcessBuilder builder = new ProcessBuilder(command);
 				JFrame newFrame = new JFrame();
 				newFrame.setTitle("Console");
 				JTextArea area = new JTextArea();
@@ -538,44 +543,75 @@ public class DeobfuscatorFrame
 				newFrame.pack();
 				newFrame.setSize(800, 600);
 				newFrame.setVisible(true);
-				SwingWorker<Void, String> worker = new SwingWorker<Void, String>()
+				PrintStream print = new PrintStream(new DeobfuscatorOutputStream(area));
+				System.setErr(print);
+				System.setOut(print);
+				// Runs it using reflection
+				thread = new Thread(new Runnable() 
 				{
 					@Override
-					protected Void doInBackground() throws Exception
+					public void run()
 					{
-						builder.redirectErrorStream(true);
-						Process process = builder.start();
-						DeobfuscatorFrame.this.process = process;
-						BufferedReader reader = new BufferedReader(
-							new InputStreamReader(process.getInputStream()));
-						String line;
-						while((line = reader.readLine()) != null)
-							publish(line);
-						return null;
-					}
-					
-					@Override
-					protected void process(List<String> chunks)
-					{
-						for(String line : chunks)
+						if(DEOBFUSCATOR_VERSION == DeobfuscatorVersion.NEW)
 						{
-							area.append(line);
-							area.append("\n");
+							try
+							{
+								Object configuration = loadClasses[1].newInstance();
+								loadClasses[1].getDeclaredMethod("setInput", File.class).
+								invoke(configuration, new File(inputField.getText()));
+								loadClasses[1].getDeclaredMethod("setOutput", File.class).
+								invoke(configuration, new File(outputField.getText()));
+								List<Object> transformers = new ArrayList<>();
+								for(Object transformer : selectedTransformers.toArray())
+									try
+									{
+										Class<?> transformerClass = null;
+										for(Class<?> clazz : transformerClasses)
+											if(clazz.getName().equals("com.javadeobfuscator.deobfuscator.transformers." + transformer))
+												transformerClass = clazz;
+										if(transformerClass == null)
+											throw new ClassNotFoundException();
+										Object transformerConfig =
+											loadClasses[2].getDeclaredMethod("configFor", Class.class).invoke(
+												null, transformerClass.asSubclass(loadClasses[3]));
+										transformers.add(transformerConfig);
+									}catch(ClassNotFoundException e)
+									{
+										System.out.println("Could not find transformer " + transformer);
+										continue;
+									}
+								loadClasses[1].getDeclaredMethod("setTransformers", List.class).
+								invoke(configuration, transformers);
+								List<File> libraries = new ArrayList<>();
+								for(Object library : librariesList.toArray())
+									libraries.add(new File((String)library));
+								loadClasses[1].getDeclaredMethod("setPath", List.class).
+								invoke(configuration, libraries);
+								Object deobfuscator = 
+									loadClasses[0].getDeclaredConstructor(loadClasses[1]).newInstance(configuration);
+								loadClasses[0].getDeclaredMethod("start").invoke(deobfuscator);
+							}catch(Exception e)
+							{
+								e.printStackTrace(print);
+							}
+							
+						}else
+						{
+							
 						}
 					}
-				};
-				worker.execute();
+				});
+				thread.start();
 				newFrame.addWindowListener(new WindowAdapter()
 		        {
 		            @Override
 		            public void windowClosing(WindowEvent e)
 		            {
 		            	btnRun.setEnabled(true);
-		            	worker.cancel(true);
-		            	if(process != null)
+		            	if(thread != null)
 		            	{
-		            		process.destroyForcibly();
-		            		process = null;
+		            		thread.destroy();
+		            		thread = null;
 		            	}
 		                e.getWindow().dispose();
 		            }
@@ -588,6 +624,13 @@ public class DeobfuscatorFrame
 	{
 		try
 		{
+			if(loader != null)
+				loader.close();
+			loader = URLClassLoader.newInstance(new URL[]{new File(path).toURI().toURL()}, DeobfuscatorFrame.class.getClassLoader());
+			transformerClasses.clear();
+			transformerList.clear();
+			DEOBFUSCATOR_VERSION = DeobfuscatorVersion.LEGACY;
+			Class<?> transformerClass = loader.loadClass("com.javadeobfuscator.deobfuscator.transformers.Transformer");
 			ZipInputStream zip = new ZipInputStream(new FileInputStream(path));
 			for(ZipEntry entry = zip.getNextEntry(); entry != null; entry =
 				zip.getNextEntry())
@@ -602,13 +645,33 @@ public class DeobfuscatorFrame
 					{
 						String name = className.substring(0,
 							className.length() - ".class".length());
-						String toPut = name.substring(
-							"com.javadeobfuscator.deobfuscator.transformers."
-								.length());
-						if(!transformerList.contains(toPut))
-							transformerList.addElement(toPut);
+						Class<?> clazz = loader.loadClass(name);
+						if(transformerClass.isAssignableFrom(clazz))
+						{
+							transformerClasses.add(loader.loadClass(name));
+							String toPut = name.substring(
+								"com.javadeobfuscator.deobfuscator.transformers."
+									.length());
+							if(!transformerList.contains(toPut))
+								transformerList.addElement(toPut);
+						}
+					}else if(className.equals("com.javadeobfuscator.deobfuscator.config.Configuration.class"))
+					{
+						loadClasses = new Class<?>[4];
+						loadClasses[0] = loader.loadClass("com.javadeobfuscator.deobfuscator.Deobfuscator");
+						loadClasses[1] = loader.loadClass("com.javadeobfuscator.deobfuscator.config.Configuration");
+						loadClasses[2] = loader.loadClass("com.javadeobfuscator.deobfuscator.config.TransformerConfig");
+						loadClasses[3] = loader.loadClass("com.javadeobfuscator.deobfuscator.transformers.Transformer");
+						DEOBFUSCATOR_VERSION = DeobfuscatorVersion.NEW;
 					}
 				}
+			if(DEOBFUSCATOR_VERSION == DeobfuscatorVersion.LEGACY)
+			{
+				loadClasses = new Class<?>[2];
+				loadClasses[0] = new URLClassLoader(new URL[]{new URL(path)}).
+					loadClass("com.javadeobfuscator.deobfuscator.Deobfuscator");
+				loadClasses[1] = loader.loadClass("com.javadeobfuscator.deobfuscator.transformers.Transformer");
+			}
 			zip.close();
 			displayLabel.setText("Successfully loaded transformers!");
 			displayLabel.setForeground(Color.GREEN);
@@ -619,5 +682,29 @@ public class DeobfuscatorFrame
 				.setText("Failed to load transformers!");
 			displayLabel.setForeground(Color.red);
 		}
+	}
+	
+	private static enum DeobfuscatorVersion
+	{
+		NEW,
+		LEGACY,
+		UNKNOWN;
+	}
+	
+	private class DeobfuscatorOutputStream extends OutputStream 
+	{
+	    private JTextArea console;
+	     
+	    public DeobfuscatorOutputStream(JTextArea console) 
+	    {
+	        this.console = console;
+	    }
+	     
+	    @Override
+	    public void write(int b) throws IOException 
+	    {
+	    	console.append(String.valueOf((char)b));
+	    	console.setCaretPosition(console.getDocument().getLength());
+	    }
 	}
 }
