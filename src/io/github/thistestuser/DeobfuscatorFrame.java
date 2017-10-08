@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -33,7 +34,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class DeobfuscatorFrame
 {
-	private static final String VERSION = "2.0-BETA";
+	private static final String VERSION = "2.0";
 	
 	/**
 	 * New - Latest API
@@ -592,13 +593,44 @@ public class DeobfuscatorFrame
 								invoke(configuration, libraries);
 								Object deobfuscator = 
 									loadClasses[0].getDeclaredConstructor(loadClasses[1]).newInstance(configuration);
-								loadClasses[0].getDeclaredMethod("start").invoke(deobfuscator);
+								try
+								{
+									loadClasses[0].getDeclaredMethod("start").invoke(deobfuscator);
+								}catch(InvocationTargetException e)
+								{
+									if(e.getTargetException().getClass().getName().
+										equals("com.javadeobfuscator.deobfuscator.exceptions.NoClassInPathException"))
+									{
+										for(int i = 0; i < 5; i++)
+							                System.out.println();
+							            System.out.println("** DO NOT OPEN AN ISSUE ON GITHUB **");
+							            System.out.println("Could not locate a class file.");
+							            System.out.println("Have you added the necessary files to the -path argument?");
+							            System.out.println("The error was:");
+									}else if(e.getTargetException().getClass().getName().
+										equals("com.javadeobfuscator.deobfuscator.exceptions.PreventableStackOverflowError"))
+									{
+										for(int i = 0; i < 5; i++)
+							                System.out.println();
+							            System.out.println("** DO NOT OPEN AN ISSUE ON GITHUB **");
+							            System.out.println("A StackOverflowError occurred during deobfuscation, but it is preventable");
+							            System.out.println("Try increasing your stack size using the -Xss flag");
+							            System.out.println("The error was:");
+									}else
+									{
+										for(int i = 0; i < 5; i++)
+											System.out.println();
+										System.out.println("Deobfuscation failed. Please open a ticket on GitHub and provide the following error:");
+									}
+									e.getTargetException().printStackTrace();
+								}
 							}catch(Exception e)
 							{
 								e.printStackTrace();
 							}
 						}
 					});
+					thread.setContextClassLoader(loader);
 					thread.start();
 					newFrame.addWindowListener(new WindowAdapter()
 			        {
