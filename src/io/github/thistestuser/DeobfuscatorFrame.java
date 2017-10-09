@@ -724,7 +724,7 @@ public class DeobfuscatorFrame
 		{
 			if(loader != null)
 				loader.close();
-			loader = URLClassLoader.newInstance(new URL[]{new File(path).toURI().toURL()}, DeobfuscatorFrame.class.getClassLoader());
+			loader = URLClassLoader.newInstance(new URL[]{new File(path).toURI().toURL()});
 			transformerClasses.clear();
 			transformerList.clear();
 			DEOBFUSCATOR_VERSION = DeobfuscatorVersion.LEGACY;
