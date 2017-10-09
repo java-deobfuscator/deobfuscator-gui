@@ -19,6 +19,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
@@ -34,7 +35,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class DeobfuscatorFrame
 {
-	private static final String VERSION = "2.0";
+	private static final String VERSION = "2.0.1";
 	
 	/**
 	 * New - Latest API
@@ -744,7 +745,8 @@ public class DeobfuscatorFrame
 						String name = className.substring(0,
 							className.length() - ".class".length());
 						Class<?> clazz = loader.loadClass(name);
-						if(transformerClass.isAssignableFrom(clazz))
+						if(transformerClass.isAssignableFrom(clazz)
+							&& !Modifier.isAbstract(clazz.getModifiers()))
 						{
 							transformerClasses.add(loader.loadClass(name));
 							String toPut = name.substring(
