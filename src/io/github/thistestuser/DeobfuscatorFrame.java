@@ -797,7 +797,6 @@ public class DeobfuscatorFrame
 	    public void write(int b) throws IOException 
 	    {
 	    	console.append(String.valueOf((char)b));
-	    	console.setCaretPosition(console.getDocument().getLength());
 	    }
 	}
 }
