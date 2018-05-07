@@ -2,6 +2,8 @@ package com.javadeobfuscator.deobfuscator.ui;
 
 import java.io.PrintStream;
 
+import javax.swing.JOptionPane;
+
 import org.controlsfx.control.ListSelectionView;
 import org.controlsfx.control.Notifications;
 
@@ -31,12 +33,10 @@ public class FxWindow extends Application {
 	@Override
 	public void start(Stage stage) {
 		loadWrappers();
-
-		stage.setTitle("Deobfuscator UI!");
+		stage.setTitle("Deobfuscator GUI");
 		VBox root = new VBox();
 		ConfigProperties props = new ConfigProperties(deob.getConfig().get());
 		TitledPane wrapper1 = new TitledPane("Configuration options", props);
-		root.getChildren().add(wrapper1);
 		// listview to display selected transformers
 		ListSelectionView<Class<?>> selectedTransformers = new ListSelectionView<>();
 		selectedTransformers.setCellFactory(p -> new ListCell<Class<?>>() {
@@ -54,13 +54,12 @@ public class FxWindow extends Application {
 		});
 		selectedTransformers.getSourceItems().addAll(trans.getTransformers());
 		TitledPane wrapper2 = new TitledPane("Transformers", selectedTransformers);
-		root.getChildren().add(wrapper2);
 		// log
 		ListView<String> logging = new ListView<>();
 		TitledPane wrapper3 = new TitledPane("Logging", logging);
-		int size = 165;
-		wrapper3.setMaxHeight(size);
-		logging.setMaxHeight(size);
+		int size = 140;
+		// wrapper3.setMaxHeight(size);
+		logging.setPrefHeight(size);
 		logging.setCellFactory(p -> new ListCell<String>() {
 			@Override
 			protected void updateItem(String item, boolean empty) {
@@ -71,6 +70,15 @@ public class FxWindow extends Application {
 					setText(item);
 				}
 			}
+		});
+		// It cant fill to the bottom by itself...
+		// This is "good enough"
+		stage.heightProperty().addListener(i -> {
+			double y = logging.getLayoutY();
+			double end = stage.getHeight();
+			double diff = (end - y) / 3.4;
+			logging.setPrefHeight(diff);
+			wrapper3.setPrefHeight(diff);
 		});
 		PrintStream ps = new PrintStream(System.out, true) {
 			@Override
@@ -92,12 +100,13 @@ public class FxWindow extends Application {
 			}
 		};
 		deob.hookLogging(ps);
-		root.getChildren().add(wrapper3);
 		// button to run the deobfuscator
+		HBox hbox = new HBox();
 		Button btnRun = new Button("Run deobfuscator");
 		btnRun.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
+				logging.getItems().clear();
 				new Thread() {
 					@Override
 					public void run() {
@@ -106,14 +115,23 @@ public class FxWindow extends Application {
 							deob.run();
 						} catch (Exception e) {
 							e.printStackTrace();
-							fatal("Failed execution", e.toString());
+							fatalFX("Failed execution", e.toString());
 						}
 					}
 				}.start();
 			}
 		});
-		root.getChildren().add(btnRun);
-		stage.setScene(new Scene(root, 700, 700));
+		hbox.getChildren().add(btnRun);
+		btnRun.setMaxWidth(Double.MAX_VALUE);
+		btnRun.getStyleClass().add("click");
+		HBox.setHgrow(btnRun, Priority.ALWAYS);
+		root.getChildren().add(wrapper1);
+		root.getChildren().add(wrapper2);
+		root.getChildren().add(hbox);
+		root.getChildren().add(wrapper3);
+		Scene scene = new Scene(root, 700, 820);
+		scene.getStylesheets().add("style.css");
+		stage.setScene(scene);
 		stage.show();
 	}
 
@@ -121,11 +139,11 @@ public class FxWindow extends Application {
 	 * Load wrappers
 	 */
 	private void loadWrappers() {
-		WrapperFactory.setupJarLoader(true);
+		WrapperFactory.setupJarLoader(false);
 		deob = WrapperFactory.getDeobfuscator();
 		trans = WrapperFactory.getTransformers();
 		if (deob == null || trans == null) {
-			fatal("Failed to locate Deobfuscator jar",
+			fatalSwing("Failed to locate Deobfuscator jar",
 					"Please ensure that JavaDeobfuscator is located adjacent to this program.");
 		}
 	}
@@ -136,14 +154,26 @@ public class FxWindow extends Application {
 	 * @param title
 	 * @param text
 	 */
-	public static void fatal(String title, String text) {
-		System.err.println(text);
+	public static void fatalSwing(String title, String text) {
+		text += "\nEnsure that you have JavaDeobfuscator in the same directory as this tool.";
+		// Reverting back to Swing since JavaFX isn't up and running when this is called.
+		JOptionPane.showMessageDialog(null, text, title, JOptionPane.ERROR_MESSAGE);
 		System.exit(0);
+	}
+
+	/**
+	 * Display error message notification.
+	 * 
+	 * @param title
+	 * @param text
+	 */
+	public static void fatalFX(String title, String text) {
 		//@formatter:off
+		Duration time = Duration.seconds(5);
 		Notifications.create()
 			.title("Error: " + title)
 			.text(text)
-			.hideAfter(Duration.seconds(5)).showError();
+			.hideAfter(time).showError();
 		//@formatter:on
 	}
 }

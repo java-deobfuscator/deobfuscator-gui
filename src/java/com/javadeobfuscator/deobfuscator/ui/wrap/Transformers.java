@@ -49,7 +49,7 @@ public class Transformers {
 				}
 				
 			} catch (Exception e) {
-				FxWindow.fatal("Loading problem", "Failed to parse transformer list");
+				FxWindow.fatalSwing("Loading problem", "Failed to parse transformer list");
 			}
 		}
 		return transformers;
@@ -66,7 +66,7 @@ public class Transformers {
 			Method configFor = confLoader.getDeclaredMethod("configFor", Class.class);
 			return configFor.invoke(null, transClass);
 		} catch (Exception e) {
-			FxWindow.fatal("Loading problem", "Failed to load TransformerConfig from Transformer class");
+			FxWindow.fatalSwing("Loading problem", "Failed to load TransformerConfig from Transformer class");
 		}
 		return null;
 	}

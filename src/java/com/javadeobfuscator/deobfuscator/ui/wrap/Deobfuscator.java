@@ -45,7 +45,7 @@ public class Deobfuscator {
 				Class<?> conf = loader.findClass("com.javadeobfuscator.deobfuscator.config.Configuration");
 				config = new Config(conf.newInstance());
 			} catch (Exception e) {
-				FxWindow.fatal("Loading problem", "Could not create instance of Config");
+				FxWindow.fatalSwing("Loading problem", "Could not create instance of Config");
 			}
 		}
 		return config;
