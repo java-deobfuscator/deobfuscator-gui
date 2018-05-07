@@ -6,3 +6,7 @@
 /.metadata/
 .settings/
 
+.classpath
+.project
+
+*/.project
