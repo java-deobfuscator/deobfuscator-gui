@@ -1,5 +1,7 @@
 package com.javadeobfuscator.deobfuscator.ui;
 
+import java.io.PrintStream;
+
 import org.controlsfx.control.ListSelectionView;
 import org.controlsfx.control.Notifications;
 
@@ -9,6 +11,7 @@ import com.javadeobfuscator.deobfuscator.ui.wrap.Transformers;
 import com.javadeobfuscator.deobfuscator.ui.wrap.WrapperFactory;
 
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
@@ -52,21 +55,65 @@ public class FxWindow extends Application {
 		selectedTransformers.getSourceItems().addAll(trans.getTransformers());
 		TitledPane wrapper2 = new TitledPane("Transformers", selectedTransformers);
 		root.getChildren().add(wrapper2);
+		// log
+		ListView<String> logging = new ListView<>();
+		TitledPane wrapper3 = new TitledPane("Logging", logging);
+		int size = 165;
+		wrapper3.setMaxHeight(size);
+		logging.setMaxHeight(size);
+		logging.setCellFactory(p -> new ListCell<String>() {
+			@Override
+			protected void updateItem(String item, boolean empty) {
+				super.updateItem(item, empty);
+				if (empty || item == null) {
+					setText(null);
+				} else {
+					setText(item);
+				}
+			}
+		});
+		PrintStream ps = new PrintStream(System.out, true) {
+			@Override
+			public void println(String line) {
+				if (line.contains(" - ")) {
+					line = line.substring(line.indexOf(" - ") + 3);
+				}
+				String newValue = line;
+				// ensure updates are done on the JavaFX thread
+				Platform.runLater(() -> {
+					logging.getItems().add(newValue);
+					int size = logging.getItems().size();
+					logging.scrollTo(size - 1);
+					if (size > 100) {
+						logging.getItems().remove(0);
+					}
+				});
+				super.println(line);
+			}
+		};
+		deob.hookLogging(ps);
+		root.getChildren().add(wrapper3);
 		// button to run the deobfuscator
 		Button btnRun = new Button("Run deobfuscator");
 		btnRun.setOnAction(new EventHandler<ActionEvent>() {
 			@Override
 			public void handle(ActionEvent event) {
-				try {
-					deob.getConfig().setTransformers(trans, selectedTransformers.getTargetItems());
-					deob.run();
-				} catch (Exception e) {
-					fatal("Failed execution", e.toString());
-				}
+				new Thread() {
+					@Override
+					public void run() {
+						try {
+							deob.getConfig().setTransformers(trans, selectedTransformers.getTargetItems());
+							deob.run();
+						} catch (Exception e) {
+							e.printStackTrace();
+							fatal("Failed execution", e.toString());
+						}
+					}
+				}.start();
 			}
 		});
 		root.getChildren().add(btnRun);
-		stage.setScene(new Scene(root, 600, 600));
+		stage.setScene(new Scene(root, 700, 700));
 		stage.show();
 	}
 

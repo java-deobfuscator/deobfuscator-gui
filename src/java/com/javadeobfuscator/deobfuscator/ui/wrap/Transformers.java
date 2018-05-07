@@ -3,7 +3,9 @@ package com.javadeobfuscator.deobfuscator.ui.wrap;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 import com.javadeobfuscator.deobfuscator.ui.FxWindow;
 import com.javadeobfuscator.deobfuscator.ui.util.ByteLoader;
@@ -32,8 +34,20 @@ public class Transformers {
 	public List<Class<?>> getTransformers() {
 		if (transformers.size() == 0) {
 			try {
-				Class<?> transList = loader.findClass("com.javadeobfuscator.deobfuscator.transformers.Transformers");
-				recurse(transList);
+				Class<?> transformer = loader.findClass("com.javadeobfuscator.deobfuscator.transformers.Transformer");
+				Class<?> transformerD = loader.findClass("com.javadeobfuscator.deobfuscator.transformers.DelegatingTransformer");
+				List<String> names = new ArrayList<>(loader.getClassNames());
+				Collections.sort(names);
+				for (String name : names) {
+					if (name.startsWith("com.javadeobfuscator.deobfuscator.transformers.") && name.endsWith("er")) {
+						Class<?> clazz = loader.findClass(name);
+						if (!clazz.equals(transformer) && !clazz.equals(transformerD) && transformer.isAssignableFrom(clazz)) {
+							transformers.add(clazz);
+						}
+					}
+					
+				}
+				
 			} catch (Exception e) {
 				FxWindow.fatal("Loading problem", "Failed to parse transformer list");
 			}
@@ -57,23 +71,4 @@ public class Transformers {
 		return null;
 	}
 
-	/**
-	 * Since the Transformers class is organized by inner-classes wrapping transformer
-	 * classes, allow recursive calls to inners to find every possible transformer.
-	 * 
-	 * @param outer
-	 *            Outer class.
-	 * @throws Exception
-	 *             Fields could not be iterated.
-	 */
-	private void recurse(Class<?> outer) throws Exception {
-		// search inners for values
-		for (Class<?> inner : outer.getDeclaredClasses()) {
-			for (Field field : Reflect.fields(inner)) {
-				transformers.add((Class<?>) field.get(null));
-			}
-			// search inner's inners
-			recurse(inner);
-		}
-	}
 }

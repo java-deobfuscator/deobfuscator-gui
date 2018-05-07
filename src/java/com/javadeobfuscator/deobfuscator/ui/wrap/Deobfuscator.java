@@ -61,7 +61,7 @@ public class Deobfuscator {
 		Class<?> main = loader.findClass("com.javadeobfuscator.deobfuscator.Deobfuscator");
 		Config conf = getConfig();
 		Constructor<?> con = main.getDeclaredConstructor(conf.get().getClass());
-		Object deob = con.newInstance(conf);
+		Object deob = con.newInstance(conf.get());
 		Method start = main.getMethod("start");
 		start.invoke(deob);
 	}

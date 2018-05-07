@@ -40,6 +40,9 @@ public final class ByteLoader extends ClassLoader {
 		}
 		// Unknown class, defer to system ClassLoader
 		return loadClass(name, false);
-
+	}
+	
+	public Set<String> getClassNames() {
+		return classes.keySet();
 	}
 }
