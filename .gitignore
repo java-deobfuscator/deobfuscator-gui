@@ -1,4 +1,12 @@
 /bin/
-
-.settings/
+/lib/
+/test/
 /output/
+/target/
+/.metadata/
+.settings/
+
+.classpath
+.project
+
+*/.project
