@@ -152,7 +152,9 @@ public class WrapperFactory {
 					// META, which we will bundle to appease SLF4J's ServiceLoader screwery.)
 					byte[] value = from(is);
 					String className = new MiniClassReader(value).getClassName();
-					if (className.contains("javadeobfuscator")) {
+					// We know this class is in the deobfuscator jar, so if the jar does 
+					// not contain it, it is not the correct file.
+					if (className.contains("com/javadeobfuscator/deobfuscator/Deobfuscator")) {
 						found = true;
 					}
 					contents.put(className.replace("/", "."), value);

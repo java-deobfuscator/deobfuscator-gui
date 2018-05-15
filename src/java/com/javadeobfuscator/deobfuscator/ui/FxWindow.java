@@ -139,7 +139,7 @@ public class FxWindow extends Application {
 	 * Load wrappers
 	 */
 	private void loadWrappers() {
-		WrapperFactory.setupJarLoader(false);
+		WrapperFactory.setupJarLoader(/* recursive */ false);
 		deob = WrapperFactory.getDeobfuscator();
 		trans = WrapperFactory.getTransformers();
 		if (deob == null || trans == null) {
