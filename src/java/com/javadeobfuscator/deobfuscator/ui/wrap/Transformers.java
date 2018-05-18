@@ -1,15 +1,12 @@
 package com.javadeobfuscator.deobfuscator.ui.wrap;
 
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 import com.javadeobfuscator.deobfuscator.ui.FxWindow;
 import com.javadeobfuscator.deobfuscator.ui.util.ByteLoader;
-import com.javadeobfuscator.deobfuscator.ui.util.Reflect;
 
 public class Transformers {
 	// load with:

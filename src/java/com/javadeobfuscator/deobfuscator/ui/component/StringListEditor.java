@@ -1,6 +1,5 @@
 package com.javadeobfuscator.deobfuscator.ui.component;
 
-import java.io.File;
 import java.util.List;
 
 import org.controlsfx.control.PropertySheet.Item;

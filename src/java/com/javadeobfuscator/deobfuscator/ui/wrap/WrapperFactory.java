@@ -151,7 +151,14 @@ public class WrapperFactory {
 					// skip non-classes (Deobfuscator doesn't have any resources aside for
 					// META, which we will bundle to appease SLF4J's ServiceLoader screwery.)
 					byte[] value = from(is);
-					String className = new MiniClassReader(value).getClassName();
+					String className;
+					try
+					{
+						className = new MiniClassReader(value).getClassName();
+					}catch(Exception e)
+					{
+						continue;
+					}
 					// We know this class is in the deobfuscator jar, so if the jar does 
 					// not contain it, it is not the correct file.
 					if (className.contains("com/javadeobfuscator/deobfuscator/Deobfuscator")) {

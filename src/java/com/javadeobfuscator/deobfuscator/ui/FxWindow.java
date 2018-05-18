@@ -1,7 +1,8 @@
 package com.javadeobfuscator.deobfuscator.ui;
 
 import java.io.PrintStream;
-
+import java.util.Collection;
+import java.util.List;
 import javax.swing.JOptionPane;
 
 import org.controlsfx.control.ListSelectionView;
@@ -14,6 +15,7 @@ import com.javadeobfuscator.deobfuscator.ui.wrap.WrapperFactory;
 
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.collections.ObservableListBase;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
@@ -52,7 +54,7 @@ public class FxWindow extends Application {
 				}
 			}
 		});
-		selectedTransformers.getSourceItems().addAll(trans.getTransformers());
+		selectedTransformers.setSourceItems(new ImmutableTransformerList(trans.getTransformers()));
 		TitledPane wrapper2 = new TitledPane("Transformers", selectedTransformers);
 		// log
 		ListView<String> logging = new ListView<>();
@@ -175,5 +177,115 @@ public class FxWindow extends Application {
 			.text(text)
 			.hideAfter(time).showError();
 		//@formatter:on
+	}
+	
+	private class ImmutableTransformerList extends ObservableListBase<Class<?>> 
+	{
+		private List<Class<?>> value;
+		
+		public ImmutableTransformerList(List<Class<?>> value)
+		{
+			super.addAll(value);
+			this.value = value;
+		}
+		
+		@Override
+		public boolean add(Class<?> arg0)
+		{
+			return false;
+		}
+
+		@Override
+		public void add(int arg0, Class<?> arg1)
+		{
+		}
+
+		@Override
+		public boolean addAll(Collection<? extends Class<?>> arg0)
+		{
+			return false;
+		}
+
+		@Override
+		public boolean addAll(int arg0, Collection<? extends Class<?>> arg1)
+		{
+			return false;
+		}
+
+		@Override
+		public void clear()
+		{
+		}
+
+		@Override
+		public boolean remove(Object arg0)
+		{
+			return false;
+		}
+
+		@Override
+		public Class<?> remove(int arg0)
+		{
+			return null;
+		}
+
+		@Override
+		public boolean removeAll(Collection<?> c)
+		{
+			return false;
+		}
+
+		@Override
+		public boolean retainAll(Collection<?> c)
+		{
+			return false;
+		}
+
+		@Override
+		public Class<?> set(int index, Class<?> element)
+		{
+			return null;
+		}
+		
+		@Override
+		public boolean addAll(Class<?>... elements)
+		{
+			return false;
+		}
+
+		@Override
+		public boolean setAll(Class<?>... elements)
+		{
+			return false;
+		}
+
+		@Override
+		public boolean setAll(Collection<? extends Class<?>> col)
+		{
+			return false;
+		}
+
+		@Override
+		public boolean removeAll(Class<?>... elements)
+		{
+			return false;
+		}
+
+		@Override
+		public void remove(int from, int to)
+		{
+		}
+
+		@Override
+		public Class<?> get(int arg0)
+		{
+			return value.get(arg0);
+		}
+
+		@Override
+		public int size()
+		{
+			return value.size();
+		}
 	}
 }
