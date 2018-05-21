@@ -38,14 +38,15 @@ public class Deobfuscator {
 
 	/**
 	 * @return Config wrapper.
+	 * @throws FallbackException 
 	 */
-	public Config getConfig() {
+	public Config getConfig() throws FallbackException {
 		if (config == null) {
 			try {
 				Class<?> conf = loader.findClass("com.javadeobfuscator.deobfuscator.config.Configuration");
 				config = new Config(conf.newInstance());
 			} catch (Exception e) {
-				FxWindow.fatalSwing("Loading problem", "Could not create instance of Config");
+				throw new FallbackException("Loading Problem", "Could not create Config instance.");
 			}
 		}
 		return config;

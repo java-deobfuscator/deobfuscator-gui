@@ -1,14 +1,21 @@
 package com.javadeobfuscator.deobfuscator.ui;
 
+import java.io.File;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Collection;
 import java.util.List;
 import javax.swing.JOptionPane;
+import javax.swing.UIManager;
+import javax.swing.UnsupportedLookAndFeelException;
 
 import org.controlsfx.control.ListSelectionView;
 import org.controlsfx.control.Notifications;
 
 import com.javadeobfuscator.deobfuscator.ui.component.ConfigProperties;
+import com.javadeobfuscator.deobfuscator.ui.util.FallbackException;
+import com.javadeobfuscator.deobfuscator.ui.util.InvalidJarException;
+import com.javadeobfuscator.deobfuscator.ui.wrap.Config;
 import com.javadeobfuscator.deobfuscator.ui.wrap.Deobfuscator;
 import com.javadeobfuscator.deobfuscator.ui.wrap.Transformers;
 import com.javadeobfuscator.deobfuscator.ui.wrap.WrapperFactory;
@@ -26,18 +33,28 @@ import javafx.util.Duration;
 
 public class FxWindow extends Application {
 	public static void main(String[] args) {
+		try
+		{
+			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+		}catch(ClassNotFoundException | InstantiationException
+			| IllegalAccessException | UnsupportedLookAndFeelException e)
+		{
+			e.printStackTrace();
+		}
 		launch(args);
 	}
 
 	private Deobfuscator deob;
 	private Transformers trans;
+	private Config config;
+	private List<Class<?>> transformers;
 
 	@Override
 	public void start(Stage stage) {
 		loadWrappers();
 		stage.setTitle("Deobfuscator GUI");
 		VBox root = new VBox();
-		ConfigProperties props = new ConfigProperties(deob.getConfig().get());
+		ConfigProperties props = new ConfigProperties(config.get());
 		TitledPane wrapper1 = new TitledPane("Configuration options", props);
 		// listview to display selected transformers
 		ListSelectionView<Class<?>> selectedTransformers = new ListSelectionView<>();
@@ -54,7 +71,7 @@ public class FxWindow extends Application {
 				}
 			}
 		});
-		selectedTransformers.setSourceItems(new ImmutableTransformerList(trans.getTransformers()));
+		selectedTransformers.setSourceItems(new ImmutableTransformerList(transformers));
 		TitledPane wrapper2 = new TitledPane("Transformers", selectedTransformers);
 		// log
 		ListView<String> logging = new ListView<>();
@@ -137,30 +154,51 @@ public class FxWindow extends Application {
 		stage.show();
 	}
 
-	/**
-	 * Load wrappers
-	 */
-	private void loadWrappers() {
-		WrapperFactory.setupJarLoader(/* recursive */ false);
+	private void loadWrappers() 
+	{
+		WrapperFactory.setupJarLoader(false);
 		deob = WrapperFactory.getDeobfuscator();
 		trans = WrapperFactory.getTransformers();
-		if (deob == null || trans == null) {
-			fatalSwing("Failed to locate Deobfuscator jar",
-					"Please ensure that JavaDeobfuscator is located adjacent to this program.");
+		//Test if loaded correctly
+		try
+		{
+			config = deob.getConfig();
+			transformers = trans.getTransformers();
+		}catch(FallbackException e)
+		{
+			config = null;
+			transformers = null;
+			fallbackLoad(e.path);
 		}
 	}
-
-	/**
-	 * Display error message notification.
-	 * 
-	 * @param title
-	 * @param text
-	 */
-	public static void fatalSwing(String title, String text) {
-		text += "\nEnsure that you have JavaDeobfuscator in the same directory as this tool.";
-		// Reverting back to Swing since JavaFX isn't up and running when this is called.
-		JOptionPane.showMessageDialog(null, text, title, JOptionPane.ERROR_MESSAGE);
-		System.exit(0);
+	
+	private void fallbackLoad(String path)
+	{
+		try
+		{
+			File file = new File(path);
+			if(!file.exists())
+				throw new FallbackException("Loading error", "Path specified does not exist.");
+			try
+			{
+				WrapperFactory.setupJarLoader(file);
+			}catch(IOException e)
+			{
+				throw new FallbackException("Loading error", "IOException while reading file.");
+			}catch(InvalidJarException e)
+			{
+				throw new FallbackException("Loading error", "Invaild JAR selected. Note that old versions of deobfuscator are not supported!");
+			}
+			deob = WrapperFactory.getDeobfuscator();
+			trans = WrapperFactory.getTransformers();
+			config = deob.getConfig();
+			transformers = trans.getTransformers();
+		}catch(FallbackException e)
+		{
+			config = null;
+			transformers = null;
+			fallbackLoad(e.path);
+		}
 	}
 
 	/**

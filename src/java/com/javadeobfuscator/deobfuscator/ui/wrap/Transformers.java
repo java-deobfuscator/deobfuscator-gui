@@ -1,12 +1,14 @@
 package com.javadeobfuscator.deobfuscator.ui.wrap;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 import com.javadeobfuscator.deobfuscator.ui.FxWindow;
 import com.javadeobfuscator.deobfuscator.ui.util.ByteLoader;
+import com.javadeobfuscator.deobfuscator.ui.util.FallbackException;
 
 public class Transformers {
 	// load with:
@@ -27,8 +29,9 @@ public class Transformers {
 
 	/**
 	 * @return List of all transformer classes.
+	 * @throws FallbackException 
 	 */
-	public List<Class<?>> getTransformers() {
+	public List<Class<?>> getTransformers() throws FallbackException {
 		if (transformers.size() == 0) {
 			try {
 				Class<?> transformer = loader.findClass("com.javadeobfuscator.deobfuscator.transformers.Transformer");
@@ -36,9 +39,10 @@ public class Transformers {
 				List<String> names = new ArrayList<>(loader.getClassNames());
 				Collections.sort(names);
 				for (String name : names) {
-					if (name.startsWith("com.javadeobfuscator.deobfuscator.transformers.") && name.endsWith("er")) {
+					if (name.startsWith("com.javadeobfuscator.deobfuscator.transformers.")) {
 						Class<?> clazz = loader.findClass(name);
-						if (!clazz.equals(transformer) && !clazz.equals(transformerD) && transformer.isAssignableFrom(clazz)) {
+						if (!clazz.equals(transformer) && !clazz.equals(transformerD) && transformer.isAssignableFrom(clazz)
+							&& !Modifier.isAbstract(clazz.getModifiers())) {
 							transformers.add(clazz);
 						}
 					}
@@ -46,7 +50,8 @@ public class Transformers {
 				}
 				
 			} catch (Exception e) {
-				FxWindow.fatalSwing("Loading problem", "Failed to parse transformer list");
+				transformers.clear();
+				throw new FallbackException("Loading Problem", "Failed to parse transformer list.");
 			}
 		}
 		return transformers;
@@ -63,7 +68,7 @@ public class Transformers {
 			Method configFor = confLoader.getDeclaredMethod("configFor", Class.class);
 			return configFor.invoke(null, transClass);
 		} catch (Exception e) {
-			FxWindow.fatalSwing("Loading problem", "Failed to load TransformerConfig from Transformer class");
+			//TODO FxWindow.fatalSwing("Loading problem", "Failed to load TransformerConfig from Transformer class"); Only stop deobfuscator run
 		}
 		return null;
 	}

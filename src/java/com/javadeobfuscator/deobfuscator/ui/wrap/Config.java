@@ -35,7 +35,7 @@ public class Config {
 		try {
 			Reflect.setFieldO(instance, "transformers", transformerConfigs);
 		} catch (Exception e) {
-			FxWindow.fatalSwing("Config error", "Failed to set transformers list from selected values.");
+			//TODO FxWindow.fatalSwing("Config error", "Failed to set transformers list from selected values.");
 		}
 	}
 }
