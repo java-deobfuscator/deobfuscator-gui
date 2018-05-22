@@ -47,6 +47,7 @@ public class SwingWindow
 		gbc_IPanel.fill = GridBagConstraints.HORIZONTAL;
 		gbc_IPanel.anchor = GridBagConstraints.FIRST_LINE_START;
 		gbc_IPanel.insets = new Insets(15, 10, 0, 10);
+		gbc_IPanel.gridwidth = 2;
 		gbc_IPanel.weightx = 1;
 		JPanel inputPnl = new JPanel();
 		inputPnl.setBorder(new TitledBorder("Deobfuscator Input"));
@@ -68,7 +69,8 @@ public class SwingWindow
 		    gbc_Text.gridy = gridy;
 		    gbc_Text.weightx = 1;
 		    gbc_Text.fill = GridBagConstraints.HORIZONTAL;
-		    inputPnl.add(new JTextField(), gbc_Text);
+		    JTextField textField = new JTextField();
+		    inputPnl.add(textField, gbc_Text);
 		    GridBagConstraints gbc_Select = new GridBagConstraints();
 		    gbc_Select.insets = new Insets(5, 7, 2, 2);
 		    gbc_Select.gridx = 2;
@@ -84,7 +86,8 @@ public class SwingWindow
 		    gbc_box.insets = new Insets(5, 2, 2, 2);
 		    gbc_box.gridx = 0;
 		    gbc_box.gridy = gridy;
-		    inputPnl.add(new JCheckBox(gridy == 2 ? "Verify" : "Detect"), gbc_box);
+		    JCheckBox checkBox = new JCheckBox(gridy == 2 ? "Verify" : "Detect");
+		    inputPnl.add(checkBox, gbc_box);
 		}
 		
 		//Other Options
@@ -92,6 +95,7 @@ public class SwingWindow
 		gbc_OPanel.fill = GridBagConstraints.BOTH;
 		gbc_OPanel.anchor = GridBagConstraints.NORTHWEST;
 		gbc_OPanel.insets = new Insets(15, 10, 20, 10);
+		gbc_OPanel.gridwidth = 2;
 		gbc_OPanel.gridy = 1;
 		gbc_OPanel.weightx = 1;
 		gbc_OPanel.weighty = 1;
@@ -120,25 +124,16 @@ public class SwingWindow
 		transformerJList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		transformerJList.setModel(transformerList);
 		transformerListScroll.setViewportView(transformerJList);
-		
 		GridBagConstraints gbc_TransformerList = new GridBagConstraints();
+		gbc_TransformerList.gridx = 0;
+		gbc_TransformerList.gridy = 0;
+		gbc_TransformerList.gridheight = 4;
 		gbc_TransformerList.anchor = GridBagConstraints.FIRST_LINE_START;
 		gbc_TransformerList.fill = GridBagConstraints.BOTH;
 		gbc_TransformerList.insets = new Insets(20, 20, 20, 10);
 		gbc_TransformerList.weightx = 0.5;
 		gbc_TransformerList.weighty = 1;
 		transformersPanel.add(transformerListScroll, gbc_TransformerList);
-		//Buttons
-		JButton add = new JButton(">");
-		GridBagConstraints gbc_add = new GridBagConstraints();
-		gbc_add.gridx = 1;
-		gbc_add.ipadx = 10;
-		transformersPanel.add(add, gbc_add);
-		JButton remove = new JButton("<");
-		GridBagConstraints gbc_remove = new GridBagConstraints();
-		gbc_remove.gridx = 1;
-		gbc_remove.ipadx = 10;
-		transformersPanel.add(remove, gbc_remove);
 		//Second list (selected)
 		JScrollPane transformerSelectedScroll = new JScrollPane();
 		DefaultListModel<String> transformerSelected = new DefaultListModel<>();
@@ -147,14 +142,194 @@ public class SwingWindow
 		selectedJList.setModel(transformerSelected);
 		transformerSelectedScroll.setViewportView(selectedJList);
 		GridBagConstraints gbc_TransformerSelected = new GridBagConstraints();
+		gbc_TransformerSelected.gridy = 0;
+		gbc_TransformerSelected.gridx = 2;
+		gbc_TransformerSelected.gridheight = 4;
 		gbc_TransformerSelected.anchor = GridBagConstraints.LAST_LINE_START;
 		gbc_TransformerSelected.fill = GridBagConstraints.BOTH;
 		gbc_TransformerSelected.insets = new Insets(20, 10, 20, 20);
-		gbc_TransformerSelected.gridx = 2;
 		gbc_TransformerSelected.weightx = 0.5;
 		gbc_TransformerSelected.weighty = 1;
 		transformersPanel.add(transformerSelectedScroll, gbc_TransformerSelected);
+		//Buttons
+		//4 panels to position buttons correctly
+		JPanel panel1 = new JPanel();
+		GridBagConstraints gbc_panel1 = new GridBagConstraints();
+		gbc_panel1.gridx = 1;
+		gbc_panel1.weighty = 0.5;
+		transformersPanel.add(panel1, gbc_panel1);
+		JPanel panel2 = new JPanel();
+		panel2.setLayout(new GridBagLayout());
+		GridBagConstraints gbc_panel2 = new GridBagConstraints();
+		gbc_panel2.gridx = 1;
+		gbc_panel2.weighty = 0.5;
+		transformersPanel.add(panel2, gbc_panel2);
+		JPanel panel3 = new JPanel();
+		panel3.setLayout(new GridBagLayout());
+		GridBagConstraints gbc_panel3 = new GridBagConstraints();
+		gbc_panel3.gridx = 1;
+		gbc_panel3.weighty = 0.5;
+		transformersPanel.add(panel3, gbc_panel3);
+		JPanel panel4 = new JPanel();
+		GridBagConstraints gbc_panel4 = new GridBagConstraints();
+		gbc_panel4.gridx = 1;
+		gbc_panel4.weighty = 0.5;
+		transformersPanel.add(panel4, gbc_panel4);
+		JButton add = new JButton(">");
+		GridBagConstraints gbc_add = new GridBagConstraints();
+		gbc_add.anchor = GridBagConstraints.CENTER;
+		gbc_add.insets = new Insets(5, 5, 5, 5);
+		gbc_add.ipadx = 10;
+		panel2.add(add, gbc_add);
+		JButton remove = new JButton("<");
+		GridBagConstraints gbc_remove = new GridBagConstraints();
+		gbc_remove.anchor = GridBagConstraints.CENTER;
+		gbc_remove.insets = new Insets(5, 5, 5, 5);
+		gbc_remove.ipadx = 10;
+		panel3.add(remove, gbc_remove);
 		tabbedPane.addTab("Transformers", transformersPanel);
+		
+		//TODO: FILE LIST
+		JPanel libPanel = new JPanel();
+		libPanel.setLayout(new GridBagLayout());
+		JScrollPane libListScroll = new JScrollPane();
+		DefaultListModel<String> librariesList = new DefaultListModel<>();
+		JList<String> libJList = new JList<>(librariesList);
+		libJList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+		libJList.setModel(librariesList);
+		libListScroll.setViewportView(libJList);
+		GridBagConstraints gbl_libraries = new GridBagConstraints();
+		gbl_libraries.gridx = 0;
+		gbl_libraries.gridy = 0;
+		gbl_libraries.gridheight = 4;
+		gbl_libraries.anchor = GridBagConstraints.FIRST_LINE_START;
+		gbl_libraries.fill = GridBagConstraints.BOTH;
+		gbl_libraries.insets = new Insets(20, 20, 20, 20);
+		gbl_libraries.weightx = 1;
+		gbl_libraries.weighty = 1;
+		libPanel.add(libListScroll, gbl_libraries);
+		//Buttons
+		//4 panels to position buttons correctly
+		JPanel libPanel1 = new JPanel();
+		GridBagConstraints gbc_libPanel1 = new GridBagConstraints();
+		gbc_libPanel1.gridx = 1;
+		gbc_libPanel1.weighty = 0.5;
+		libPanel.add(libPanel1, gbc_libPanel1);
+		JPanel libPanel2 = new JPanel();
+		libPanel2.setLayout(new GridBagLayout());
+		GridBagConstraints gbc_libPanel2 = new GridBagConstraints();
+		gbc_libPanel2.gridx = 1;
+		gbc_libPanel2.weighty = 0.5;
+		libPanel.add(libPanel2, gbc_libPanel2);
+		JPanel libPanel3 = new JPanel();
+		libPanel3.setLayout(new GridBagLayout());
+		GridBagConstraints gbc_libPanel3 = new GridBagConstraints();
+		gbc_libPanel3.gridx = 1;
+		gbc_libPanel3.weighty = 0.5;
+		libPanel.add(libPanel3, gbc_libPanel3);
+		JPanel libPanel4 = new JPanel();
+		GridBagConstraints gbc_libPanel4 = new GridBagConstraints();
+		gbc_libPanel4.gridx = 1;
+		gbc_libPanel4.weighty = 0.5;
+		libPanel.add(libPanel4, gbc_libPanel4);
+		JButton addLib = new JButton("  Add  ");
+		GridBagConstraints gbc_addLib = new GridBagConstraints();
+		gbc_addLib.anchor = GridBagConstraints.CENTER;
+		gbc_addLib.insets = new Insets(5, 5, 5, 20);
+		libPanel2.add(addLib, gbc_addLib);
+		JButton removeLib = new JButton("Remove");
+		GridBagConstraints gbc_removeLib = new GridBagConstraints();
+		gbc_removeLib.anchor = GridBagConstraints.CENTER;
+		gbc_removeLib.insets = new Insets(5, 5, 5, 20);
+		libPanel3.add(removeLib, gbc_removeLib);
+		tabbedPane.addTab("Libraries", libPanel);
+		
+		//TODO: String list
+		JPanel stringPanel = new JPanel();
+		stringPanel.setLayout(new GridBagLayout());
+		JScrollPane stringListScroll = new JScrollPane();
+		DefaultListModel<String> stringList = new DefaultListModel<>();
+		JList<String> stringJList = new JList<>(stringList);
+		stringJList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+		stringJList.setModel(stringList);
+		stringListScroll.setViewportView(stringJList);
+		GridBagConstraints gbl_string = new GridBagConstraints();
+		gbl_string.gridx = 0;
+		gbl_string.gridy = 0;
+		gbl_string.gridheight = 4;
+		gbl_string.anchor = GridBagConstraints.FIRST_LINE_START;
+		gbl_string.fill = GridBagConstraints.BOTH;
+		gbl_string.insets = new Insets(0, 20, 0, 20);
+		gbl_string.weightx = 1;
+		gbl_string.weighty = 1;
+		stringPanel.add(stringListScroll, gbl_string);
+		//Buttons
+		//4 panels to position buttons correctly
+		JPanel stringPanel1 = new JPanel();
+		GridBagConstraints gbc_stringPanel1 = new GridBagConstraints();
+		gbc_stringPanel1.gridx = 1;
+		gbc_stringPanel1.weighty = 0.5;
+		stringPanel.add(stringPanel1, gbc_stringPanel1);
+		JPanel stringPanel2 = new JPanel();
+		stringPanel2.setLayout(new GridBagLayout());
+		GridBagConstraints gbc_stringPanel2 = new GridBagConstraints();
+		gbc_stringPanel2.gridx = 1;
+		gbc_stringPanel2.weighty = 0.5;
+		stringPanel.add(stringPanel2, gbc_stringPanel2);
+		JPanel stringPanel3 = new JPanel();
+		stringPanel3.setLayout(new GridBagLayout());
+		GridBagConstraints gbc_stringPanel3 = new GridBagConstraints();
+		gbc_stringPanel3.gridx = 1;
+		gbc_stringPanel3.weighty = 0.5;
+		stringPanel.add(stringPanel3, gbc_stringPanel3);
+		JPanel stringPanel4 = new JPanel();
+		GridBagConstraints gbc_stringPanel4 = new GridBagConstraints();
+		gbc_stringPanel4.gridx = 1;
+		gbc_stringPanel4.weighty = 0.5;
+		stringPanel.add(stringPanel4, gbc_stringPanel4);
+		JButton addString = new JButton("  Add  ");
+		GridBagConstraints gbc_addString = new GridBagConstraints();
+		gbc_addString.anchor = GridBagConstraints.CENTER;
+		gbc_addString.insets = new Insets(5, 5, 5, 20);
+		stringPanel2.add(addString, gbc_addString);
+		JButton removeString = new JButton("Remove");
+		GridBagConstraints gbc_removeString = new GridBagConstraints();
+		gbc_removeString.anchor = GridBagConstraints.CENTER;
+		gbc_removeString.insets = new Insets(5, 5, 5, 20);
+		stringPanel3.add(removeString, gbc_removeString);
+		//Text pane
+		JTextField textPane = new JTextField();
+		GridBagConstraints gbl_text = new GridBagConstraints();
+		gbl_text.gridx = 0;
+		gbl_text.gridy = 4;
+		gbl_text.anchor = GridBagConstraints.FIRST_LINE_START;
+		gbl_text.fill = GridBagConstraints.HORIZONTAL;
+		gbl_text.insets = new Insets(0, 20, 20, 20);
+		gbl_text.weightx = 1;
+		stringPanel.add(textPane, gbl_text);
+		tabbedPane.addTab("Ignored Classes", stringPanel);
+		
+		//Config and Run buttons
+		GridBagConstraints gbl_loadConfig = new GridBagConstraints();
+		gbl_loadConfig.gridy = 2;
+		gbl_loadConfig.anchor = GridBagConstraints.FIRST_LINE_START;
+		gbl_loadConfig.insets = new Insets(0, 20, 20, 10);
+		JButton load = new JButton("Load Config");
+		frame.getContentPane().add(load, gbl_loadConfig);
+		GridBagConstraints gbl_saveConfig = new GridBagConstraints();
+		gbl_saveConfig.gridx = 1;
+		gbl_saveConfig.gridy = 2;
+		gbl_saveConfig.anchor = GridBagConstraints.FIRST_LINE_START;
+		gbl_saveConfig.insets = new Insets(0, 10, 20, 20);
+		JButton save = new JButton("Save Config");
+		frame.getContentPane().add(save, gbl_saveConfig);
+		GridBagConstraints gbl_run = new GridBagConstraints();
+		gbl_run.anchor = GridBagConstraints.FIRST_LINE_END;
+		gbl_run.gridx = 1;
+		gbl_run.gridy = 2;
+		gbl_run.insets = new Insets(0, 10, 20, 20);
+		JButton run = new JButton("Run");
+		frame.getContentPane().add(run, gbl_run);		
 		
 		frame.setVisible(true);
 	}
