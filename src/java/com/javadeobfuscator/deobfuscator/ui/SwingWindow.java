@@ -76,6 +76,7 @@ public class SwingWindow
 		    gbc_Text.fill = GridBagConstraints.HORIZONTAL;
 		    JTextField textField = new JTextField();
 		    i.component = textField;
+		    i.setValue();
 		    inputPnl.add(textField, gbc_Text);
 		    GridBagConstraints gbc_Select = new GridBagConstraints();
 		    gbc_Select.insets = new Insets(5, 7, 2, 2);
@@ -97,6 +98,7 @@ public class SwingWindow
 		    gbc_box.gridy = gridy;
 		    JCheckBox checkBox = new JCheckBox(i.getDisplayName());
 		    i.component = checkBox;
+		    i.setValue();
 		    inputPnl.add(checkBox, gbc_box);
 		    gridy++;
 		}
@@ -209,6 +211,7 @@ public class SwingWindow
 			JScrollPane libListScroll = new JScrollPane();
 			DefaultListModel<String> librariesList = new DefaultListModel<>();
 			i.component = librariesList;
+			i.setValue();
 			JList<String> libJList = new JList<>(librariesList);
 			libJList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 			libJList.setModel(librariesList);
@@ -269,6 +272,7 @@ public class SwingWindow
 			JScrollPane stringListScroll = new JScrollPane();
 			DefaultListModel<String> stringList = new DefaultListModel<>();
 			i.component = stringList;
+			i.setValue();
 			JList<String> stringJList = new JList<>(stringList);
 			stringJList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 			stringJList.setModel(stringList);

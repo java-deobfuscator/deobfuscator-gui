@@ -5,6 +5,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -36,7 +37,7 @@ public class SwingConfiguration
 		{
 			if(IGNORED_VALUES.contains(field.getName()))
 				continue;
-			fieldsList.add(new ConfigItem(field));
+			fieldsList.add(new ConfigItem(config, field));
 		}
 	}
 	
@@ -44,12 +45,14 @@ public class SwingConfiguration
 	{
 		private final Field field;
 		public final ItemType type;
+		private Object instance;
 		
 		/** The swing component that we'll use to call the set value */
 		public Object component;
 		
-		public ConfigItem(Field field)
+		public ConfigItem(Object instance, Field field)
 		{
+			this.instance = instance;
 			this.field = field;
 			if(field.getType().equals(File.class))
 				type = ItemType.FILE;
@@ -81,16 +84,54 @@ public class SwingConfiguration
 				return ((JTextField)component).getText();
 			if(type == ItemType.BOOLEAN)
 				return ((JCheckBox)component).isSelected();
-			//For LIST types, we return DefaultListModel
-			return component;
+			return Arrays.asList(((DefaultListModel<?>)component).toArray());
 		}
 		
 		/**
-		 * Sets the value. Used when run deobfuscator is clicked.
+		 *  Sets the component value with the field value. Used on first load and load config.
+		 */
+		public void setValue()
+		{
+			if(getFieldValue() == null)
+				return;
+			if(type == ItemType.FILE)
+				((JTextField)component).setText((String)getFieldValue());
+			else if(type == ItemType.BOOLEAN)
+				((JCheckBox)component).setSelected((Boolean)getFieldValue());
+			else
+			{
+				DefaultListModel<Object> listModel = (DefaultListModel<Object>)component;
+				listModel.clear();
+				List<?> fieldValue = (List<?>)getFieldValue();
+				for(Object o : fieldValue)
+					listModel.addElement(o);
+			}
+		}
+		
+		/**
+		 * Gets the field value (used on first load)
+		 */
+		public Object getFieldValue()
+		{
+			try
+			{
+				return Reflect.getFieldO(instance, field.getName());
+			}catch(Exception e)
+			{
+				return null;
+			}
+		}
+		
+		/**
+		 * Sets the field value with the component value. Used when run deobfuscator is clicked.
 		 */
 		public void setFieldValue()
 		{
-			//TODO
+			try
+			{
+				Reflect.setFieldO(instance, field.getName(), getValue());
+			}catch(Exception e)
+			{}
 		}
 		
 	}
