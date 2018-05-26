@@ -3,7 +3,6 @@ package com.javadeobfuscator.deobfuscator.ui.wrap;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.javadeobfuscator.deobfuscator.ui.FxWindow;
 import com.javadeobfuscator.deobfuscator.ui.util.Reflect;
 
 /**

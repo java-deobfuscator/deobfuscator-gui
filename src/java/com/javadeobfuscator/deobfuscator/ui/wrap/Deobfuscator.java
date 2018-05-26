@@ -4,7 +4,6 @@ import java.io.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 
-import com.javadeobfuscator.deobfuscator.ui.FxWindow;
 import com.javadeobfuscator.deobfuscator.ui.util.*;
 
 public class Deobfuscator {
