@@ -6,7 +6,7 @@ import java.util.List;
 import com.javadeobfuscator.deobfuscator.ui.util.Reflect;
 
 /**
- * Conflg wrapper that allows for easy reflection maniuplation of fields.
+ * Config wrapper that allows for easy reflection manipulation of fields.
  */
 public class Config {
 
