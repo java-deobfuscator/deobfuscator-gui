@@ -2,6 +2,11 @@ package com.javadeobfuscator.deobfuscator.ui;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -23,17 +28,13 @@ import com.javadeobfuscator.deobfuscator.ui.wrap.Config;
 import com.javadeobfuscator.deobfuscator.ui.wrap.Deobfuscator;
 import com.javadeobfuscator.deobfuscator.ui.wrap.Transformers;
 import com.javadeobfuscator.deobfuscator.ui.wrap.WrapperFactory;
+
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 
 public class SwingWindow
 {
@@ -755,8 +756,132 @@ public class SwingWindow
 		gbl_run.ipadx = 15;
 		gbl_run.insets = new Insets(0, 10, 20, 20);
 		JButton run = new JButton("Run");
-		frame.getContentPane().add(run, gbl_run);		
 		
+		JTextArea area = new JTextArea();
+		PrintStream print = new PrintStream(new DeobfuscatorOutputStream(area));
+		System.setErr(print);
+		System.setOut(print);
+		deob.hookLogging(print);
+		
+		run.addActionListener(new ActionListener()
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				run.setEnabled(false);
+				// Start
+				area.setText(null);
+				JFrame newFrame = new JFrame();
+				newFrame.setTitle("Console");
+				area.setEditable(false);
+				newFrame.getContentPane().add(new JScrollPane(area));
+				newFrame.pack();
+				newFrame.setSize(800, 600);
+				newFrame.setVisible(true);
+				Thread thread = new Thread(new Runnable() 
+				{
+					@Override
+					public void run()
+					{
+						try
+						{
+							if(true)throw new RuntimeException("TESTING");
+							//Set fields
+							for(ConfigItem item : fields)
+							{
+								item.clearFieldValue();
+								item.setFieldValue();
+							}
+							List<Class<?>> transformerClasses = new ArrayList<>();
+							for(Object o : transformerSelected.toArray())
+							{
+								String str = (String)o;
+								transformerClasses.add(NAME_TO_TRANSFORMER.get(str));
+							}
+							deob.getConfig().setTransformers(trans, transformerClasses);
+							try
+							{
+								deob.run();
+							}catch(InvocationTargetException e)
+							{
+								if(e.getTargetException().getClass().getName().
+									equals("com.javadeobfuscator.deobfuscator.exceptions.NoClassInPathException"))
+								{
+									for(int i = 0; i < 5; i++)
+						                System.out.println();
+						            System.out.println("** DO NOT OPEN AN ISSUE ON GITHUB **");
+						            System.out.println("Could not locate a class file.");
+						            System.out.println("Have you added the necessary files to the -libraries argument?");
+						            System.out.println("The error was:");
+								}else if(e.getTargetException().getClass().getName().
+									equals("com.javadeobfuscator.deobfuscator.exceptions.PreventableStackOverflowError"))
+								{
+									for(int i = 0; i < 5; i++)
+						                System.out.println();
+						            System.out.println("** DO NOT OPEN AN ISSUE ON GITHUB **");
+						            System.out.println("A StackOverflowError occurred during deobfuscation, but it is preventable");
+						            System.out.println("Try increasing your stack size using the -Xss flag");
+						            System.out.println("The error was:");
+								}else
+								{
+									for(int i = 0; i < 5; i++)
+										System.out.println();
+									System.out.println("Deobfuscation failed. Please open a ticket on GitHub and provide the following error:");
+								}
+								e.getTargetException().printStackTrace();
+							}
+						}catch(Throwable e)
+						{
+							JFrame newFrame = new JFrame();
+							newFrame.setTitle("Error");
+							newFrame.setBounds(100, 100, 500, 400);
+							newFrame.setResizable(true);
+							newFrame.getContentPane().setLayout(new GridBagLayout());
+							
+							JLabel yourConfiguration = new JLabel("An error occured while running deobfuscator.");
+							GridBagConstraints gbc_yourConfiguration = new GridBagConstraints();
+							gbc_yourConfiguration.anchor = GridBagConstraints.PAGE_START;
+							gbc_yourConfiguration.insets = new Insets(15, 5, 5, 5);
+							gbc_yourConfiguration.gridx = 0;
+							gbc_yourConfiguration.gridy = 0;
+							newFrame.getContentPane().add(yourConfiguration, gbc_yourConfiguration);
+							
+							JScrollPane scrollPane = new JScrollPane();
+							JTextPane textPane = new JTextPane();
+							textPane.setEditable(false);
+							scrollPane.setViewportView(textPane);
+							GridBagConstraints gbc_scrollPane = new GridBagConstraints();
+							gbc_scrollPane.insets = new Insets(2, 10, 5, 10);
+							gbc_scrollPane.gridx = 0;
+							gbc_scrollPane.gridy = 1;
+							gbc_scrollPane.weightx = 1;
+							gbc_scrollPane.weighty = 1;
+							gbc_scrollPane.fill = GridBagConstraints.BOTH;
+							newFrame.getContentPane().add(scrollPane, gbc_scrollPane);
+							StringWriter stringWriter = new StringWriter();
+							PrintWriter writer = new PrintWriter(stringWriter);
+							e.printStackTrace(writer);
+							textPane.setText(stringWriter.toString());
+							newFrame.setVisible(true);
+						}
+					}
+				});
+				thread.start();
+				newFrame.addWindowListener(new WindowAdapter()
+		        {
+		            @Override
+		            public void windowClosing(WindowEvent e)
+		            {
+		            	run.setEnabled(true);
+		            	if(thread.isAlive())
+		            		thread.stop();
+		                e.getWindow().dispose();
+		            }
+		        });
+			}
+		});
+		
+		frame.getContentPane().add(run, gbl_run);		
 		frame.setVisible(true);
 	}
 	
@@ -814,5 +939,21 @@ public class SwingWindow
 			transformers = null;
 			fallbackLoad(e.path);
 		}
+	}
+	
+	private static class DeobfuscatorOutputStream extends OutputStream 
+	{
+	    private JTextArea console;
+	     
+	    public DeobfuscatorOutputStream(JTextArea console) 
+	    {
+	        this.console = console;
+	    }
+	     
+	    @Override
+	    public void write(int b) throws IOException 
+	    {
+	    	console.append(String.valueOf((char)b));
+	    }
 	}
 }

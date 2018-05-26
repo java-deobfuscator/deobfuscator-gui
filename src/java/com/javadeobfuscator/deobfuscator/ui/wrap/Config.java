@@ -26,15 +26,11 @@ public class Config {
 	 * @param trans
 	 * @param classes
 	 */
-	public void setTransformers(Transformers trans, List<Class<?>> classes) {
+	public void setTransformers(Transformers trans, List<Class<?>> classes) throws Exception {
 		List<Object> transformerConfigs = new ArrayList<>();
 		for (Class<?> clazz : classes) {
 			transformerConfigs.add(trans.getConfigFor(clazz));
 		}
-		try {
-			Reflect.setFieldO(instance, "transformers", transformerConfigs);
-		} catch (Exception e) {
-			//TODO FxWindow.fatalSwing("Config error", "Failed to set transformers list from selected values.");
-		}
+		Reflect.setFieldO(instance, "transformers", transformerConfigs);
 	}
 }

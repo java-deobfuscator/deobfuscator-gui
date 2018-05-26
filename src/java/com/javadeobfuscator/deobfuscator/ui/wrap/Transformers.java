@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.javadeobfuscator.deobfuscator.ui.FxWindow;
 import com.javadeobfuscator.deobfuscator.ui.util.ByteLoader;
 import com.javadeobfuscator.deobfuscator.ui.util.FallbackException;
 
@@ -62,15 +61,10 @@ public class Transformers {
 	 *            Transformer class
 	 * @return Config instance for transformer class.
 	 */
-	public Object getConfigFor(Class<?> transClass) {
-		try {
-			Class<?> confLoader = loader.findClass("com.javadeobfuscator.deobfuscator.config.TransformerConfig");
-			Method configFor = confLoader.getDeclaredMethod("configFor", Class.class);
-			return configFor.invoke(null, transClass);
-		} catch (Exception e) {
-			//TODO FxWindow.fatalSwing("Loading problem", "Failed to load TransformerConfig from Transformer class"); Only stop deobfuscator run
-		}
-		return null;
+	public Object getConfigFor(Class<?> transClass) throws Exception {
+		Class<?> confLoader = loader.findClass("com.javadeobfuscator.deobfuscator.config.TransformerConfig");
+		Method configFor = confLoader.getDeclaredMethod("configFor", Class.class);
+		return configFor.invoke(null, transClass);
 	}
 
 }
