@@ -4,6 +4,7 @@ A GUI for a the popular [java-deobfuscator](https://github.com/java-deobfuscator
 
 ## What is Deobfuscator-GUI?
 Deobfuscator-GUI is a GUI for the command line deobfuscator. User interfaces are more intuitive to the average user, allowing more people to use the tool without needing to concern themselves with syntax or configuration files.
+Note that as of 3.0 very old versions of deobfuscator will no longer be supported.
 
 ## How to Use 
 1. Download the deobfuscator.jar from https://github.com/java-deobfuscator/deobfuscator.
