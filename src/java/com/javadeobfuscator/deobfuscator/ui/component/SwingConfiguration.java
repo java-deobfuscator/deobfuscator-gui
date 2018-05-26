@@ -69,6 +69,11 @@ public class SwingConfiguration
 				type = null;
 		}
 		
+		public String getFieldName()
+		{
+			return field.getName();
+		}
+		
 		public String getDisplayName()
 		{
 			String name =  field.getName();
@@ -77,6 +82,7 @@ public class SwingConfiguration
 		
 		/**
 		 * Gets the component value (used in save config)
+		 * Returns string if file and list if defaultlistmodel.
 		 */
 		public Object getValue()
 		{
@@ -88,37 +94,31 @@ public class SwingConfiguration
 		}
 		
 		/**
-		 *  Sets the component value with the field value. Used on first load and load config.
+		 *  Sets the component value. Must be either a string, boolean, or DefaultListModel of String.
 		 */
-		public void setValue()
+		public void setValue(Object o)
 		{
-			if(getFieldValue() == null)
-				return;
 			if(type == ItemType.FILE)
-				((JTextField)component).setText((String)getFieldValue());
+				((JTextField)component).setText((String)o);
 			else if(type == ItemType.BOOLEAN)
-				((JCheckBox)component).setSelected((Boolean)getFieldValue());
+				((JCheckBox)component).setSelected((Boolean)o);
+			else
+				component = o;
+		}
+		
+		/**
+		 * Clears the component value.
+		 */
+		public void clearValue()
+		{
+			if(type == ItemType.FILE)
+				((JTextField)component).setText("");
+			else if(type == ItemType.BOOLEAN)
+				((JCheckBox)component).setSelected(false);
 			else
 			{
 				DefaultListModel<Object> listModel = (DefaultListModel<Object>)component;
 				listModel.clear();
-				List<?> fieldValue = (List<?>)getFieldValue();
-				for(Object o : fieldValue)
-					listModel.addElement(o);
-			}
-		}
-		
-		/**
-		 * Gets the field value (used on first load)
-		 */
-		public Object getFieldValue()
-		{
-			try
-			{
-				return Reflect.getFieldO(instance, field.getName());
-			}catch(Exception e)
-			{
-				return null;
 			}
 		}
 		
@@ -127,13 +127,39 @@ public class SwingConfiguration
 		 */
 		public void setFieldValue()
 		{
+			Object o = getValue();
+			if(type == ItemType.FILE)
+				o = new File((String)o);
+			else if(type == ItemType.FILELIST)
+			{
+				List<File> files = new ArrayList<>();
+				for(Object obj : (List<?>)o)
+					files.add(new File((String)obj));
+				o = files;
+			}
 			try
 			{
-				Reflect.setFieldO(instance, field.getName(), getValue());
+				Reflect.setFieldO(instance, field.getName(), o);
 			}catch(Exception e)
 			{}
 		}
 		
+		/**
+		 * Clears the field value.
+		 */
+		public void clearFieldValue()
+		{
+			try
+			{
+				if(type == ItemType.FILE)
+					Reflect.setFieldO(instance, field.getName(), null);
+				else if(type == ItemType.BOOLEAN)
+					Reflect.setFieldO(instance, field.getName(), false);
+				else
+					Reflect.setFieldO(instance, field.getName(), new ArrayList<>());
+			}catch(Exception e)
+			{}
+		}
 	}
 	
 	public static enum ItemType
