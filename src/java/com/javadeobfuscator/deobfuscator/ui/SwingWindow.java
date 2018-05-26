@@ -44,6 +44,7 @@ public class SwingWindow
 	private static List<Class<?>> transformers;
 	private static File inputOutputPath = new File(System.getProperty("user.dir"));
 	private static File libPath = new File(System.getProperty("user.dir"));
+	private static JCheckBoxMenuItem shouldLimitLines;
 	private static final Map<Class<?>, String> TRANSFORMER_TO_NAME = new HashMap<>();
 	private static final Map<String, Class<?>> NAME_TO_TRANSFORMER = new HashMap<>();
 	
@@ -65,6 +66,14 @@ public class SwingWindow
 		frame.setBounds(100, 100, 580, 650);
 		frame.getContentPane().setLayout(new GridBagLayout());
 		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
+		
+		//Menu
+		JMenuBar menuBar = new JMenuBar();
+		JMenu menu = new JMenu("Options");
+		menuBar.add(menu);
+		shouldLimitLines = new JCheckBoxMenuItem("Limit Console Lines");
+		menu.add(shouldLimitLines);
+		frame.setJMenuBar(menuBar);
 		
 		//Deobfuscator Input
 		GridBagConstraints gbc_IPanel = new GridBagConstraints();
@@ -770,7 +779,6 @@ public class SwingWindow
 			{
 				run.setEnabled(false);
 				// Start
-				area.setText(null);
 				JFrame newFrame = new JFrame();
 				newFrame.setTitle("Console");
 				area.setEditable(false);
@@ -871,6 +879,8 @@ public class SwingWindow
 		            @Override
 		            public void windowClosing(WindowEvent e)
 		            {
+		            	print.flush();
+		            	area.setText(null);
 		            	run.setEnabled(true);
 		            	if(thread.isAlive())
 		            		thread.stop();
@@ -953,6 +963,16 @@ public class SwingWindow
 	    public void write(int b) throws IOException 
 	    {
 	    	console.append(String.valueOf((char)b));
+	    	if(shouldLimitLines.isSelected() && console.getLineCount() > 100)
+	    	{
+	    		try
+	    		{
+	    			console.replaceRange("", 0, console.getLineEndOffset(0));
+	    		}catch(Exception e)
+	    		{
+	    			
+	    		}
+	    	}
 	    }
 	}
 }
