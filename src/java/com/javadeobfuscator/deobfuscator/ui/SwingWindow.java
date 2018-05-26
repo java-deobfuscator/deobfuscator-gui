@@ -785,7 +785,6 @@ public class SwingWindow
 					{
 						try
 						{
-							if(true)throw new RuntimeException("TESTING");
 							//Set fields
 							for(ConfigItem item : fields)
 							{
