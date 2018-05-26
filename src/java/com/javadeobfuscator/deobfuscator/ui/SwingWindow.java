@@ -41,8 +41,8 @@ public class SwingWindow
 	private static Transformers trans;
 	private static Config config;
 	private static List<Class<?>> transformers;
-	private static File inputOutputPath;
-	private static File libPath;
+	private static File inputOutputPath = new File(System.getProperty("user.dir"));
+	private static File libPath = new File(System.getProperty("user.dir"));
 	private static final Map<Class<?>, String> TRANSFORMER_TO_NAME = new HashMap<>();
 	private static final Map<String, Class<?>> NAME_TO_TRANSFORMER = new HashMap<>();
 	
