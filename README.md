@@ -1,6 +1,4 @@
-# deobfuscator-gui [![latest release](https://img.shields.io/github/release/java-deobfuscator/deobfuscator-gui.svg?label=latest%20release)](https://github.com/java-deobfuscator/deobfuscator-gui/releases/latest) 
-
-![downloads](https://img.shields.io/github/downloads/java-deobfuscator/deobfuscator-gui/total.svg)
+# deobfuscator-gui [![downloads](https://img.shields.io/github/downloads/java-deobfuscator/deobfuscator-gui/total.svg)](https://github.com/java-deobfuscator/deobfuscator-gui/releases/latest) 
 
 A GUI for a the popular [java-deobfuscator](https://github.com/java-deobfuscator/deobfuscator).
 
