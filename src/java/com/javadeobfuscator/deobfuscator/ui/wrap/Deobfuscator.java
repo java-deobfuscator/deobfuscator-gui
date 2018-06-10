@@ -2,7 +2,10 @@ package com.javadeobfuscator.deobfuscator.ui.wrap;
 
 import java.io.*;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.Set;
 
 import com.javadeobfuscator.deobfuscator.ui.util.*;
 
@@ -15,6 +18,10 @@ public class Deobfuscator {
 	 * Config wrapper to use in deobfuscator.
 	 */
 	private Config config;
+	/**
+	 * The deobfuscator instance.
+	 */
+	private Object instance;
 
 	Deobfuscator(ByteLoader loader) {
 		this.loader = loader;
@@ -62,10 +69,53 @@ public class Deobfuscator {
 		Config conf = getConfig();
 		Constructor<?> con = main.getDeclaredConstructor(conf.get().getClass());
 		Object deob = con.newInstance(conf.get());
+		instance = deob;
 		Method start = main.getMethod("start");
 		start.invoke(deob);
 	}
 
+	/**
+	 * Clears the classes in the main deobfuscator class.
+	 * 
+	 * @throws Exception
+	 *             Thrown for any failure in the deobfuscator.
+	 */
+	public void clearClasses() 
+	{
+		try
+		{
+			if(instance != null)
+			{
+				Class<?> main = loader.findClass("com.javadeobfuscator.deobfuscator.Deobfuscator");
+				Field cp = main.getDeclaredField("classpath");
+				cp.setAccessible(true);
+				((Map<?, ?>)cp.get(instance)).clear();
+				Field c = main.getDeclaredField("classes");
+				c.setAccessible(true);
+				((Map<?, ?>)c.get(instance)).clear();
+				Field h = main.getDeclaredField("hierachy");
+				h.setAccessible(true);
+				((Map<?, ?>)h.get(instance)).clear();
+				Field ip = main.getDeclaredField("inputPassthrough");
+				ip.setAccessible(true);
+				((Map<?, ?>)ip.get(instance)).clear();
+				Field cps = main.getDeclaredField("constantPools");
+				cps.setAccessible(true);
+				((Map<?, ?>)cps.get(instance)).clear();
+				Field r = main.getDeclaredField("readers");
+				r.setAccessible(true);
+				((Map<?, ?>)r.get(instance)).clear();
+				Field lc = main.getDeclaredField("libraryClassnodes");
+				lc.setAccessible(true);
+				((Set<?>)lc.get(instance)).clear();
+				instance = null;
+			}
+		}catch(Exception e)
+		{
+			e.printStackTrace();
+		}
+	}
+	
 	/**
 	 * Intercept logging calls.
 	 * 

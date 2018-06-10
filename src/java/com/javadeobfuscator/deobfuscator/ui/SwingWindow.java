@@ -871,6 +871,7 @@ public class SwingWindow
 							textPane.setText(stringWriter.toString());
 							newFrame.setVisible(true);
 						}
+						deob.clearClasses();
 					}
 				});
 				thread.start();
@@ -883,7 +884,10 @@ public class SwingWindow
 		            	area.setText(null);
 		            	run.setEnabled(true);
 		            	if(thread.isAlive())
+		            	{
 		            		thread.stop();
+		            		deob.clearClasses();
+		            	}
 		                e.getWindow().dispose();
 		            }
 		        });
