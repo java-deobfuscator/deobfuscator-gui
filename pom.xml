@@ -42,7 +42,7 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>com.javadeobfuscator.deobfuscator.ui.FxWindow</mainClass>
+							<mainClass>com.javadeobfuscator.deobfuscator.ui.SwingWindow</mainClass>
 						</manifest>
 					</archive>
 					<descriptorRefs>
