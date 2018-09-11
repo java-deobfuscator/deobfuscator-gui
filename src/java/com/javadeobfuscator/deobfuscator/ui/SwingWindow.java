@@ -30,6 +30,7 @@ import com.javadeobfuscator.deobfuscator.ui.wrap.Transformers;
 import com.javadeobfuscator.deobfuscator.ui.wrap.WrapperFactory;
 
 import java.awt.GridBagLayout;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
 import java.awt.Toolkit;
@@ -869,6 +870,9 @@ public class SwingWindow
 							PrintWriter writer = new PrintWriter(stringWriter);
 							e.printStackTrace(writer);
 							textPane.setText(stringWriter.toString());
+							Toolkit toolkit = Toolkit.getDefaultToolkit();
+							Dimension screenSize = toolkit.getScreenSize();
+							newFrame.setLocation((screenSize.width - newFrame.getWidth()) / 2, (screenSize.height - newFrame.getHeight()) / 2);
 							newFrame.setVisible(true);
 						}
 						deob.clearClasses();

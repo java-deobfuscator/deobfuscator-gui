@@ -103,6 +103,23 @@ public class WrapperFactory {
 		if (files == null) {
 			return null;
 		}
+		// check for common names
+		File deobfuscator = new File(dir, "deobfuscator.jar");
+		File deobfuscator100 = new File(dir, "deobfuscator-1.0.0.jar");
+		if(deobfuscator.exists())
+			try {
+				ByteLoader v = fromJar(deobfuscator);
+				if (v != null) {
+					return v;
+				}
+			} catch (IOException e) {} catch (InvalidJarException e) {}
+		if(deobfuscator100.exists())
+			try {
+				ByteLoader v = fromJar(deobfuscator100);
+				if (v != null) {
+					return v;
+				}
+			} catch (IOException e) {} catch (InvalidJarException e) {}
 		for (File file : files) {
 			// check sub-dirs
 			if (recurse && file.isDirectory()) {
