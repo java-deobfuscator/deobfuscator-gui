@@ -82,10 +82,6 @@ public class Reflect {
 	public static <T> T getFieldO(Object instance, String name) throws Exception {
 		Field f = instance.getClass().getDeclaredField(name);
 		f.setAccessible(true);
-		// hack access
-		Field acc = Field.class.getDeclaredField("modifiers");
-		acc.setAccessible(true);
-		acc.setInt(f, f.getModifiers() & ~Modifier.FINAL);
 		// get
 		return (T) f.get(instance);
 	}
@@ -101,10 +97,6 @@ public class Reflect {
 	public static <T> T getFieldS(Class<?> clazz, String name) throws Exception {
 		Field f = clazz.getDeclaredField(name);
 		f.setAccessible(true);
-		// hack access
-		Field acc = Field.class.getDeclaredField("modifiers");
-		acc.setAccessible(true);
-		acc.setInt(f, f.getModifiers() & ~Modifier.FINAL);
 		// get
 		return (T) f.get(null);
 	}
@@ -120,10 +112,6 @@ public class Reflect {
 	public static void setFieldO(Object instance, String name, Object value) throws Exception {
 		Field f = instance.getClass().getDeclaredField(name);
 		f.setAccessible(true);
-		// hack access
-		Field acc = Field.class.getDeclaredField("modifiers");
-		acc.setAccessible(true);
-		acc.setInt(f, f.getModifiers() & ~Modifier.FINAL);
 		// set
 		f.set(instance, value);
 	}
@@ -139,10 +127,6 @@ public class Reflect {
 	public static void setFieldS(Class<?> clazz, String name, Object value) throws Exception {
 		Field f = clazz.getDeclaredField(name);
 		f.setAccessible(true);
-		// hack access
-		Field acc = Field.class.getDeclaredField("modifiers");
-		acc.setAccessible(true);
-		acc.setInt(f, f.getModifiers() & ~Modifier.FINAL);
 		// set
 		f.set(null, value);
 	}
