@@ -1,17 +1,35 @@
 package com.javadeobfuscator.deobfuscator.ui;
 
+import java.awt.Dialog;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
+import java.io.StringReader;
 import java.io.StringWriter;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
@@ -22,40 +40,36 @@ import javax.swing.border.TitledBorder;
 import com.javadeobfuscator.deobfuscator.ui.component.SwingConfiguration;
 import com.javadeobfuscator.deobfuscator.ui.component.SwingConfiguration.ConfigItem;
 import com.javadeobfuscator.deobfuscator.ui.component.SwingConfiguration.ItemType;
+import com.javadeobfuscator.deobfuscator.ui.component.SynchronousJFXCaller;
+import com.javadeobfuscator.deobfuscator.ui.component.SynchronousJFXFileChooser;
+import com.javadeobfuscator.deobfuscator.ui.component.WrapLayout;
 import com.javadeobfuscator.deobfuscator.ui.util.FallbackException;
 import com.javadeobfuscator.deobfuscator.ui.util.InvalidJarException;
+import com.javadeobfuscator.deobfuscator.ui.util.TransformerConfigUtil;
 import com.javadeobfuscator.deobfuscator.ui.wrap.Config;
 import com.javadeobfuscator.deobfuscator.ui.wrap.Deobfuscator;
 import com.javadeobfuscator.deobfuscator.ui.wrap.Transformers;
 import com.javadeobfuscator.deobfuscator.ui.wrap.WrapperFactory;
-
-import java.awt.GridBagLayout;
-import java.awt.Dimension;
-import java.awt.GridBagConstraints;
-import java.awt.Insets;
-import java.awt.Toolkit;
-import java.awt.datatransfer.StringSelection;
-import java.awt.event.*;
+import javafx.stage.FileChooser;
 
 public class SwingWindow
 {
+
 	private static Deobfuscator deob;
-	private static Transformers trans;
+	public static Transformers trans;
 	private static Config config;
 	private static List<Class<?>> transformers;
-	private static File inputOutputPath = new File(System.getProperty("user.dir"));
-	private static File libPath = new File(System.getProperty("user.dir"));
 	private static JCheckBoxMenuItem shouldLimitLines;
 	private static final Map<Class<?>, String> TRANSFORMER_TO_NAME = new HashMap<>();
 	private static final Map<String, Class<?>> NAME_TO_TRANSFORMER = new HashMap<>();
-	
+
 	public static void main(String[] args)
 	{
+		SynchronousJFXCaller.init();
 		try
 		{
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		}catch(ClassNotFoundException | InstantiationException
-			| IllegalAccessException | UnsupportedLookAndFeelException e)
+		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e)
 		{
 			e.printStackTrace();
 		}
@@ -67,7 +81,7 @@ public class SwingWindow
 		frame.setBounds(100, 100, 580, 650);
 		frame.getContentPane().setLayout(new GridBagLayout());
 		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-		
+
 		//Menu
 		JMenuBar menuBar = new JMenuBar();
 		JMenu menu = new JMenu("Options");
@@ -75,234 +89,330 @@ public class SwingWindow
 		shouldLimitLines = new JCheckBoxMenuItem("Limit Console Lines");
 		menu.add(shouldLimitLines);
 		frame.setJMenuBar(menuBar);
-		
+
 		//Deobfuscator Input
-		GridBagConstraints gbc_IPanel = new GridBagConstraints();
-		gbc_IPanel.fill = GridBagConstraints.HORIZONTAL;
-		gbc_IPanel.anchor = GridBagConstraints.NORTHWEST;
-		gbc_IPanel.insets = new Insets(15, 10, 0, 10);
-		gbc_IPanel.gridwidth = 2;
-		gbc_IPanel.weightx = 1;
 		JPanel inputPnl = new JPanel();
-		inputPnl.setBorder(new TitledBorder("Deobfuscator Input"));
-		frame.getContentPane().add(inputPnl, gbc_IPanel);
-		inputPnl.setLayout(new GridBagLayout());
-		
-		int gridy = 0;
-		for(ConfigItem i : fields)
 		{
-			if(i.type != SwingConfiguration.ItemType.FILE)
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.fill = GridBagConstraints.HORIZONTAL;
+			gbc.anchor = GridBagConstraints.WEST;
+			gbc.insets = new Insets(15, 10, 0, 10);
+			gbc.gridwidth = 2;
+			gbc.weightx = 1;
+			frame.getContentPane().add(inputPnl, gbc);
+		}
+		inputPnl.setBorder(new TitledBorder("Deobfuscator Input"));
+		inputPnl.setLayout(new GridBagLayout());
+
+		int gridy = 0;
+		for (ConfigItem i : fields)
+		{
+			if (i.type != SwingConfiguration.ItemType.FILE)
 				continue;
-			GridBagConstraints gbc_Label = new GridBagConstraints();
-			gbc_Label.anchor = GridBagConstraints.PAGE_START;
-		    gbc_Label.insets = new Insets(5, 2, 2, 2);
-		    gbc_Label.gridx = 0;
-		    gbc_Label.gridy = gridy;
-		    inputPnl.add(new JLabel(i.getDisplayName() + ":"), gbc_Label);
-		    GridBagConstraints gbc_Text = new GridBagConstraints();
-		    gbc_Text.insets = new Insets(5, 2, 2, 2);
-		    gbc_Text.gridx = 1;
-		    gbc_Text.gridy = gridy;
-		    gbc_Text.weightx = 1;
-		    gbc_Text.fill = GridBagConstraints.HORIZONTAL;
-		    JTextField textField = new JTextField();
-		    i.component = textField;
-		    inputPnl.add(textField, gbc_Text);
-		    GridBagConstraints gbc_Select = new GridBagConstraints();
-		    gbc_Select.insets = new Insets(5, 7, 2, 2);
-		    gbc_Select.gridx = 2;
-		    gbc_Select.gridy = gridy;
-		    gbc_Select.ipadx = 15;
-		    JButton button = new JButton("Select");
-		    inputPnl.add(button, gbc_Select);
-		    button.addActionListener(new ActionListener()
+			JLabel label = new JLabel(i.getDisplayName() + ":");
 			{
-				@Override
-				public void actionPerformed(ActionEvent e)
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.anchor = GridBagConstraints.PAGE_START;
+				gbc.insets = new Insets(5, 2, 2, 2);
+				gbc.gridx = 0;
+				gbc.gridy = gridy;
+				inputPnl.add(label, gbc);
+			}
+			JTextField textField = new JTextField();
+			i.component = textField;
+			{
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.insets = new Insets(5, 2, 2, 2);
+				gbc.gridx = 1;
+				gbc.gridy = gridy;
+				gbc.weightx = 1;
+				gbc.fill = GridBagConstraints.HORIZONTAL;
+				inputPnl.add(textField, gbc);
+			}
+			JButton button = new JButton("Select");
+			{
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.insets = new Insets(5, 7, 2, 2);
+				gbc.gridx = 2;
+				gbc.gridy = gridy;
+				gbc.ipadx = 15;
+				inputPnl.add(button, gbc);
+			}
+			button.addActionListener(e ->
+			{
+				File selectedFile = new SynchronousJFXFileChooser(() ->
 				{
-					JFileChooser chooser = new JFileChooser();
-					if(inputOutputPath != null)
-						chooser.setSelectedFile(inputOutputPath);
-					int action = chooser.showOpenDialog(null);
-					if(action == JFileChooser.APPROVE_OPTION)
+					FileChooser ch = new FileChooser();
+					ch.setTitle("Select " + i.getDisplayName());
+					Object value = i.getValue();
+					if (value instanceof String && !((String) value).trim().isEmpty())
 					{
-						inputOutputPath = chooser.getSelectedFile();
-						String path = chooser.getSelectedFile().toString();
-						textField.setText(path);
+						File f = new File((String) value);
+						if (f.exists())
+							ch.setInitialFileName(f.getName());
+						if (f.getParentFile().exists())
+							ch.setInitialDirectory(f.getParentFile());
 					}
+					ch.getExtensionFilters().addAll(
+							new FileChooser.ExtensionFilter("Jar and Zip files", "*.jar", "*.zip"),
+							new FileChooser.ExtensionFilter("Jar files", "*.jar"),
+							new FileChooser.ExtensionFilter("Zip files", "*.zip"),
+							new FileChooser.ExtensionFilter("All Files", "*.*"));
+					return ch;
+				}).showOpenDialog();
+				if (selectedFile != null)
+				{
+					String path = selectedFile.toString();
+					textField.setText(path);
 				}
 			});
-		    gridy++;
+			gridy++;
 		}
-		for(ConfigItem i : fields)
+
+		// Boolean options
+		JPanel boolWrapPanel = new JPanel(new WrapLayout(FlowLayout.LEFT, 5, 2));
 		{
-			if(i.type != ItemType.BOOLEAN)
-				continue;
-		    GridBagConstraints gbc_box = new GridBagConstraints();
-		    gbc_box.anchor = GridBagConstraints.NORTHWEST;
-		    gbc_box.insets = new Insets(5, 2, 2, 2);
-		    gbc_box.gridx = 0;
-		    gbc_box.gridy = gridy;
-		    JCheckBox checkBox = new JCheckBox(i.getDisplayName());
-		    i.component = checkBox;
-		    inputPnl.add(checkBox, gbc_box);
-		    gridy++;
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.anchor = GridBagConstraints.WEST;
+			gbc.insets = new Insets(5, 2, 2, 2);
+			gbc.gridx = 0;
+			gbc.gridy = gridy;
+			gbc.gridwidth = GridBagConstraints.REMAINDER;
+			inputPnl.add(boolWrapPanel, gbc);
 		}
-		
+
+		for (ConfigItem i : fields)
+		{
+			if (i.type != ItemType.BOOLEAN)
+				continue;
+			JCheckBox checkBox = new JCheckBox(i.getDisplayName());
+			i.component = checkBox;
+			boolWrapPanel.add(checkBox);
+		}
+
 		//Other Options
-		GridBagConstraints gbc_OPanel = new GridBagConstraints();
-		gbc_OPanel.fill = GridBagConstraints.BOTH;
-		gbc_OPanel.anchor = GridBagConstraints.NORTHWEST;
-		gbc_OPanel.insets = new Insets(15, 10, 20, 10);
-		gbc_OPanel.gridwidth = 2;
-		gbc_OPanel.gridy = 1;
-		gbc_OPanel.weightx = 1;
-		gbc_OPanel.weighty = 1;
 		JPanel optionsPnl = new JPanel();
 		optionsPnl.setBorder(new TitledBorder("Other Options"));
 		optionsPnl.setLayout(new GridBagLayout());
-		frame.getContentPane().add(optionsPnl, gbc_OPanel);
-		
+		{
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.fill = GridBagConstraints.BOTH;
+			gbc.anchor = GridBagConstraints.WEST;
+			gbc.insets = new Insets(15, 10, 20, 10);
+			gbc.gridwidth = 2;
+			gbc.gridy = 1;
+			gbc.weightx = 1;
+			gbc.weighty = 1;
+			frame.getContentPane().add(optionsPnl, gbc);
+		}
+
 		//The tabbed pane
 		JTabbedPane tabbedPane = new JTabbedPane(SwingConstants.TOP);
-		GridBagConstraints gbc_TabbedPane = new GridBagConstraints();
-		gbc_TabbedPane.fill = GridBagConstraints.BOTH;
-		gbc_TabbedPane.weightx = 1;
-		gbc_TabbedPane.weighty = 1;
-		optionsPnl.add(tabbedPane, gbc_TabbedPane);
-		
+		{
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.fill = GridBagConstraints.BOTH;
+			gbc.weightx = 1;
+			gbc.weighty = 1;
+			optionsPnl.add(tabbedPane, gbc);
+		}
+
 		//Transformers
 		JPanel transformersPanel = new JPanel();
 		transformersPanel.setLayout(new GridBagLayout());
 		//First list (available)
 		JScrollPane transformerListScroll = new JScrollPane();
 		DefaultListModel<String> transformerList = new DefaultListModel<>();
-		for(Class<?> clazz : transformers)
-			transformerList.addElement(clazz.getName().replace("com.javadeobfuscator.deobfuscator.transformers.", ""));
+		for (Class<?> clazz : transformers)
+		{
+			transformerList.addElement(toShortName(clazz));
+		}
 		JList<String> transformerJList = new JList<>(transformerList);
 		transformerJList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		transformerJList.setModel(transformerList);
 		transformerListScroll.setViewportView(transformerJList);
-		GridBagConstraints gbc_TransformerList = new GridBagConstraints();
-		gbc_TransformerList.gridx = 0;
-		gbc_TransformerList.gridy = 0;
-		gbc_TransformerList.gridheight = 4;
-		gbc_TransformerList.anchor = GridBagConstraints.NORTHWEST;
-		gbc_TransformerList.fill = GridBagConstraints.BOTH;
-		gbc_TransformerList.insets = new Insets(20, 20, 20, 10);
-		gbc_TransformerList.weightx = 0.5;
-		gbc_TransformerList.weighty = 1;
-		transformersPanel.add(transformerListScroll, gbc_TransformerList);
+		{
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.gridx = 0;
+			gbc.gridy = 0;
+			gbc.gridheight = 4;
+			gbc.anchor = GridBagConstraints.WEST;
+			gbc.fill = GridBagConstraints.BOTH;
+			gbc.insets = new Insets(10, 10, 10, 0);
+			gbc.weightx = 0.5;
+			gbc.weighty = 1;
+			transformersPanel.add(transformerListScroll, gbc);
+		}
 		//Second list (selected)
 		JScrollPane transformerSelectedScroll = new JScrollPane();
-		DefaultListModel<String> transformerSelected = new DefaultListModel<>();
-		JList<String> selectedJList = new JList<>(transformerSelected);
+		DefaultListModel<TransformerWithConfig> transformerSelected = new DefaultListModel<>();
+		JList<TransformerWithConfig> selectedJList = new JList<>(transformerSelected);
 		selectedJList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		selectedJList.setModel(transformerSelected);
 		transformerSelectedScroll.setViewportView(selectedJList);
-		GridBagConstraints gbc_TransformerSelected = new GridBagConstraints();
-		gbc_TransformerSelected.gridy = 0;
-		gbc_TransformerSelected.gridx = 2;
-		gbc_TransformerSelected.gridheight = 4;
-		gbc_TransformerSelected.anchor = GridBagConstraints.SOUTHEAST;
-		gbc_TransformerSelected.fill = GridBagConstraints.BOTH;
-		gbc_TransformerSelected.insets = new Insets(20, 10, 20, 20);
-		gbc_TransformerSelected.weightx = 0.5;
-		gbc_TransformerSelected.weighty = 1;
-		transformersPanel.add(transformerSelectedScroll, gbc_TransformerSelected);
-		transformerJList.addMouseListener(new MouseAdapter() 
+		{
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.gridy = 0;
+			gbc.gridx = 2;
+			gbc.gridheight = 4;
+			gbc.anchor = GridBagConstraints.SOUTHEAST;
+			gbc.fill = GridBagConstraints.BOTH;
+			gbc.insets = new Insets(10, 0, 10, 10);
+			gbc.weightx = 0.5;
+			gbc.weighty = 1;
+			transformersPanel.add(transformerSelectedScroll, gbc);
+		}
+		transformerJList.addMouseListener(new MouseAdapter()
 		{
 			@Override
-		    public void mouseClicked(MouseEvent e) 
-		    {
-				JList<String> list = (JList<String>)e.getSource();
-		        if(e.getClickCount() == 2) 
-		        {
-		            int index = list.locationToIndex(e.getPoint());
-		            transformerSelected.addElement(transformerList.getElementAt(index));
-		        }
-		    }
+			public void mouseClicked(MouseEvent e)
+			{
+				if (e.getButton() == MouseEvent.BUTTON1 && e.getClickCount() == 2)
+				{
+					JList<String> list = (JList<String>) e.getSource();
+					int index = list.locationToIndex(e.getPoint());
+					transformerSelected.addElement(new TransformerWithConfig(transformerList.getElementAt(index)));
+				}
+			}
 		});
-		selectedJList.addMouseListener(new MouseAdapter() 
+		selectedJList.addMouseListener(new MouseAdapter()
 		{
 			@Override
-		    public void mouseClicked(MouseEvent e) 
-		    {
-				JList<String> list = (JList<String>)e.getSource();
-		        if(e.getClickCount() == 2) 
-		        {
-		            int index = list.locationToIndex(e.getPoint());
-		            transformerSelected.remove(index);
-		        }
-		    }
+			public void mouseClicked(MouseEvent e)
+			{
+				if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 2)
+				{
+					JList<TransformerWithConfig> list = (JList<TransformerWithConfig>) e.getSource();
+					int index = list.locationToIndex(e.getPoint());
+					transformerSelected.remove(index);
+				}
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent e)
+			{
+				if (SwingUtilities.isRightMouseButton(e) && e.getClickCount() == 1)
+				{
+					JList<TransformerWithConfig> list = (JList<TransformerWithConfig>) e.getSource();
+					int index = list.locationToIndex(e.getPoint());
+					TransformerWithConfig tConfig = transformerSelected.get(index);
+					if (tConfig.getConfig() == null)
+					{
+						Class<?> tClass = NAME_TO_TRANSFORMER.get(tConfig.getShortName());
+						Object config = TransformerConfigUtil.getConfig(tClass);
+						if (config == null)
+						{
+							return;
+						}
+						tConfig.setConfig(config);
+					}
+
+					String title = "Options for transformer " + (index + 1) + ": " + tConfig.getShortName();
+					JDialog jd = new JDialog(frame, title, Dialog.ModalityType.APPLICATION_MODAL);
+					jd.setBounds(100, 200, 450, 200);
+					jd.setLocationRelativeTo(frame);
+					jd.getContentPane().setLayout(new GridBagLayout());
+					jd.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "Close");
+					jd.getRootPane().getActionMap().put("Close", new AbstractAction()
+					{
+						@Override
+						public void actionPerformed(ActionEvent e)
+						{
+							if (jd.isFocused() && jd.isActive())
+							{
+								jd.dispose();
+							}
+						}
+					});
+
+					TransformerSpecificConfigDialog.fill(jd, tConfig);
+
+					jd.setVisible(true);
+				}
+			}
 		});
 		//Buttons
 		//4 panels to position buttons correctly
 		JPanel panel1 = new JPanel();
-		GridBagConstraints gbc_panel1 = new GridBagConstraints();
-		gbc_panel1.gridx = 1;
-		gbc_panel1.weighty = 0.5;
-		transformersPanel.add(panel1, gbc_panel1);
+		{
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.gridx = 1;
+			gbc.weighty = 0.5;
+			transformersPanel.add(panel1, gbc);
+		}
+
 		JPanel panel2 = new JPanel();
 		panel2.setLayout(new GridBagLayout());
-		GridBagConstraints gbc_panel2 = new GridBagConstraints();
-		gbc_panel2.gridx = 1;
-		gbc_panel2.weighty = 0.5;
-		transformersPanel.add(panel2, gbc_panel2);
+		{
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.gridx = 1;
+			gbc.weighty = 0.5;
+			transformersPanel.add(panel2, gbc);
+		}
+
 		JPanel panel3 = new JPanel();
 		panel3.setLayout(new GridBagLayout());
-		GridBagConstraints gbc_panel3 = new GridBagConstraints();
-		gbc_panel3.gridx = 1;
-		gbc_panel3.weighty = 0.5;
-		transformersPanel.add(panel3, gbc_panel3);
-		JPanel panel4 = new JPanel();
-		GridBagConstraints gbc_panel4 = new GridBagConstraints();
-		gbc_panel4.gridx = 1;
-		gbc_panel4.weighty = 0.5;
-		transformersPanel.add(panel4, gbc_panel4);
-		JButton add = new JButton(">");
+		{
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.gridx = 1;
+			gbc.weighty = 0.5;
+			transformersPanel.add(panel3, gbc);
+		}
 
-		add.addActionListener(new ActionListener()
+		JPanel panel4 = new JPanel();
 		{
-			@Override
-			public void actionPerformed(ActionEvent e)
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.gridx = 1;
+			gbc.weighty = 0.5;
+			transformersPanel.add(panel4, gbc);
+		}
+
+		JButton add = new JButton(">");
+		Insets margin = add.getMargin();
+		add.setMargin(new Insets(margin.top + 30, 2, margin.bottom + 30, 2));
+		add.setPreferredSize(new Dimension(30, add.getPreferredSize().height));
+		add.addActionListener(e ->
+		{
+			for (String str : transformerJList.getSelectedValuesList())
 			{
-				for(String str : transformerJList.getSelectedValuesList())
-					transformerSelected.addElement(str);
+				transformerSelected.addElement(new TransformerWithConfig(str));
 			}
 		});
-		
-		GridBagConstraints gbc_add = new GridBagConstraints();
-		gbc_add.anchor = GridBagConstraints.CENTER;
-		gbc_add.insets = new Insets(5, 5, 5, 5);
-		gbc_add.ipadx = 10;
-		panel2.add(add, gbc_add);
+		{
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.anchor = GridBagConstraints.CENTER;
+			gbc.insets = new Insets(5, 0, 5, 0);
+			gbc.ipadx = 10;
+			panel2.add(add, gbc);
+		}
+
 		JButton remove = new JButton("<");
-		
-		remove.addActionListener(new ActionListener()
+		margin = remove.getMargin();
+		remove.setMargin(new Insets(margin.top + 30, 2, margin.bottom + 30, 2));
+		remove.setPreferredSize(new Dimension(30, remove.getPreferredSize().height));
+		remove.addActionListener(e ->
 		{
-			@Override
-			public void actionPerformed(ActionEvent e)
+			int[] indexes = selectedJList.getSelectedIndices();
+			Arrays.sort(indexes);
+			int[] reversed = IntStream.range(0, indexes.length).map(i -> indexes[indexes.length - i - 1])
+					.toArray();
+			for (int i : reversed)
 			{
-				int[] indexes = selectedJList.getSelectedIndices();
-				Arrays.sort(indexes);
-				int[] reversed = IntStream.range(0, indexes.length).map(i -> indexes[indexes.length - i - 1])
-                    .toArray();
-				for(int i : reversed)
-					transformerSelected.remove(i);
+				transformerSelected.remove(i);
 			}
 		});
-		
-		GridBagConstraints gbc_remove = new GridBagConstraints();
-		gbc_remove.anchor = GridBagConstraints.CENTER;
-		gbc_remove.insets = new Insets(5, 5, 5, 5);
-		gbc_remove.ipadx = 10;
-		panel3.add(remove, gbc_remove);
-		tabbedPane.addTab("Transformers", transformersPanel);
-		
-		for(ConfigItem i : fields)
 		{
-			if(i.type != ItemType.FILELIST)
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.anchor = GridBagConstraints.CENTER;
+			gbc.insets = new Insets(5, 2, 5, 2);
+			gbc.ipadx = 10;
+			panel3.add(remove, gbc);
+		}
+
+		tabbedPane.addTab("Transformers", transformersPanel);
+
+		for (ConfigItem i : fields)
+		{
+			if (i.type != ItemType.FILELIST)
 				continue;
 			JPanel libPanel = new JPanel();
 			libPanel.setLayout(new GridBagLayout());
@@ -313,120 +423,151 @@ public class SwingWindow
 			libJList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 			libJList.setModel(librariesList);
 			libListScroll.setViewportView(libJList);
-			GridBagConstraints gbl_libraries = new GridBagConstraints();
-			gbl_libraries.gridx = 0;
-			gbl_libraries.gridy = 0;
-			gbl_libraries.gridheight = 4;
-			gbl_libraries.anchor = GridBagConstraints.NORTHWEST;
-			gbl_libraries.fill = GridBagConstraints.BOTH;
-			gbl_libraries.insets = new Insets(20, 20, 20, 20);
-			gbl_libraries.weightx = 1;
-			gbl_libraries.weighty = 1;
-			libPanel.add(libListScroll, gbl_libraries);
-			
-			libJList.addKeyListener(new KeyListener() {
+			{
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.gridx = 0;
+				gbc.gridy = 0;
+				gbc.gridheight = 4;
+				gbc.anchor = GridBagConstraints.WEST;
+				gbc.fill = GridBagConstraints.BOTH;
+				gbc.insets = new Insets(10, 10, 10, 10);
+				gbc.weightx = 1;
+				gbc.weighty = 1;
+				libPanel.add(libListScroll, gbc);
+			}
 
+			libJList.addKeyListener(new KeyAdapter()
+			{
 				@Override
 				public void keyPressed(KeyEvent event)
 				{
-					if(event.getKeyCode() == KeyEvent.VK_DELETE)
+					if (event.getKeyCode() == KeyEvent.VK_DELETE)
 					{
 						int[] indexes = libJList.getSelectedIndices();
 						Arrays.sort(indexes);
 						int[] reversed = IntStream.range(0, indexes.length).map(i -> indexes[indexes.length - i - 1])
-		                    .toArray();
-						for(int i : reversed)
+								.toArray();
+						for (int i : reversed)
+						{
 							librariesList.remove(i);
+						}
 					}
 				}
-
-				@Override
-				public void keyReleased(KeyEvent event)
-				{}
-
-				@Override
-				public void keyTyped(KeyEvent event)
-				{}
 			});
-			
+
 			//Buttons
 			//4 panels to position buttons correctly
-			JPanel libPanel1 = new JPanel();
-			GridBagConstraints gbc_libPanel1 = new GridBagConstraints();
-			gbc_libPanel1.gridx = 1;
-			gbc_libPanel1.weighty = 0.5;
-			libPanel.add(libPanel1, gbc_libPanel1);
-			JPanel libPanel2 = new JPanel();
-			libPanel2.setLayout(new GridBagLayout());
-			GridBagConstraints gbc_libPanel2 = new GridBagConstraints();
-			gbc_libPanel2.gridx = 1;
-			gbc_libPanel2.weighty = 0.5;
-			libPanel.add(libPanel2, gbc_libPanel2);
-			JPanel libPanel3 = new JPanel();
-			libPanel3.setLayout(new GridBagLayout());
-			GridBagConstraints gbc_libPanel3 = new GridBagConstraints();
-			gbc_libPanel3.gridx = 1;
-			gbc_libPanel3.weighty = 0.5;
-			libPanel.add(libPanel3, gbc_libPanel3);
-			JPanel libPanel4 = new JPanel();
-			GridBagConstraints gbc_libPanel4 = new GridBagConstraints();
-			gbc_libPanel4.gridx = 1;
-			gbc_libPanel4.weighty = 0.5;
-			libPanel.add(libPanel4, gbc_libPanel4);
-			JButton addLib = new JButton("  Add  ");
-			
-			addLib.addActionListener(new ActionListener()
+			JPanel paddingPanel1 = new JPanel();
 			{
-				@Override
-				public void actionPerformed(ActionEvent e)
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.gridx = 1;
+				gbc.weighty = 0.5;
+				libPanel.add(paddingPanel1, gbc);
+			}
+			JPanel addLibPanel = new JPanel();
+			addLibPanel.setLayout(new GridBagLayout());
+			{
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.gridx = 1;
+				gbc.weighty = 0.5;
+				libPanel.add(addLibPanel, gbc);
+			}
+			JPanel removeLibPanel = new JPanel();
+			removeLibPanel.setLayout(new GridBagLayout());
+			{
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.gridx = 1;
+				gbc.weighty = 0.5;
+				libPanel.add(removeLibPanel, gbc);
+			}
+			JPanel paddingPanel2 = new JPanel();
+			{
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.gridx = 1;
+				gbc.weighty = 0.5;
+				libPanel.add(paddingPanel2, gbc);
+			}
+			JButton addLib = new JButton("   Add   ");
+
+			addLib.addActionListener(e ->
+			{
+				List<File> selectedFiles = new SynchronousJFXFileChooser(() ->
 				{
-					JFileChooser chooser = new JFileChooser();
-					chooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-					if(libPath != null)
-						chooser.setSelectedFile(libPath);
-					int action = chooser.showOpenDialog(null);
-					if(action == JFileChooser.APPROVE_OPTION)
+					FileChooser ch = new FileChooser();
+					ch.setTitle("Select " + i.getDisplayName());
+					Object value = i.getValue();
+					if (value instanceof List && !((List<?>) value).isEmpty())
 					{
-						libPath = chooser.getSelectedFile();
-						String path = chooser.getSelectedFile().toString();
+						List<String> list = (List<String>) value;
+						File f = new File(list.get(list.size() - 1));
+						if (f.getParentFile().exists())
+							ch.setInitialDirectory(f.getParentFile());
+					}
+					ch.getExtensionFilters().addAll(
+							new FileChooser.ExtensionFilter("Jar and Zip files", "*.jar", "*.zip"),
+							new FileChooser.ExtensionFilter("Jar files", "*.jar"),
+							new FileChooser.ExtensionFilter("Zip files", "*.zip"),
+							new FileChooser.ExtensionFilter("All Files", "*.*"));
+					return ch;
+				}).showOpenMultipleDialog();
+				if (selectedFiles != null)
+				{
+					for (File selectedFile : selectedFiles)
+					{
+						String path = selectedFile.getPath();
 						librariesList.addElement(path);
 					}
 				}
 			});
-			
-			GridBagConstraints gbc_addLib = new GridBagConstraints();
-			gbc_addLib.anchor = GridBagConstraints.CENTER;
-			gbc_addLib.insets = new Insets(5, 5, 5, 20);
-			libPanel2.add(addLib, gbc_addLib);
-			JButton removeLib = new JButton("Remove");
-			
-			removeLib.addActionListener(new ActionListener()
 			{
-				@Override
-				public void actionPerformed(ActionEvent e)
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.anchor = GridBagConstraints.CENTER;
+				gbc.insets = new Insets(5, 5, 5, 20);
+				addLibPanel.add(addLib, gbc);
+			}
+
+			JButton removeLib = new JButton("Remove");
+			removeLib.addActionListener(e ->
+			{
+				int[] indexes = libJList.getSelectedIndices();
+				Arrays.sort(indexes);
+				int[] reversed = IntStream.range(0, indexes.length).map(i1 -> indexes[indexes.length - i1 - 1])
+						.toArray();
+				for (int i1 : reversed)
 				{
-					int[] indexes = libJList.getSelectedIndices();
-					Arrays.sort(indexes);
-					int[] reversed = IntStream.range(0, indexes.length).map(i -> indexes[indexes.length - i - 1])
-	                    .toArray();
-					for(int i : reversed)
-						librariesList.remove(i);
+					librariesList.remove(i1);
 				}
 			});
-			
-			GridBagConstraints gbc_removeLib = new GridBagConstraints();
-			gbc_removeLib.anchor = GridBagConstraints.CENTER;
-			gbc_removeLib.insets = new Insets(5, 5, 5, 20);
-			libPanel3.add(removeLib, gbc_removeLib);
+			{
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.anchor = GridBagConstraints.CENTER;
+				gbc.insets = new Insets(5, 5, 5, 20);
+				removeLibPanel.add(removeLib, gbc);
+			}
+
 			tabbedPane.addTab(i.getDisplayName(), libPanel);
 		}
-		
-		for(ConfigItem i : fields)
+
+		for (ConfigItem i : fields)
 		{
-			if(i.type != ItemType.STRINGLIST)
+			if (i.type != ItemType.STRINGLIST)
 				continue;
 			JPanel stringPanel = new JPanel();
 			stringPanel.setLayout(new GridBagLayout());
+
+			JPanel stringLeftPanel = new JPanel(new GridBagLayout());
+			{
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.gridx = 0;
+				gbc.gridy = 0;
+				gbc.gridheight = GridBagConstraints.REMAINDER;
+				gbc.fill = GridBagConstraints.BOTH;
+				gbc.insets = new Insets(10, 0, 10, 0);
+				gbc.weightx = 1;
+				gbc.weighty = 1;
+				stringPanel.add(stringLeftPanel, gbc);
+			}
+
 			JScrollPane stringListScroll = new JScrollPane();
 			DefaultListModel<String> stringList = new DefaultListModel<>();
 			i.component = stringList;
@@ -434,331 +575,386 @@ public class SwingWindow
 			stringJList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 			stringJList.setModel(stringList);
 			stringListScroll.setViewportView(stringJList);
-			GridBagConstraints gbl_string = new GridBagConstraints();
-			gbl_string.gridx = 0;
-			gbl_string.gridy = 0;
-			gbl_string.gridheight = 4;
-			gbl_string.anchor = GridBagConstraints.NORTHWEST;
-			gbl_string.fill = GridBagConstraints.BOTH;
-			gbl_string.insets = new Insets(0, 20, 0, 20);
-			gbl_string.weightx = 1;
-			gbl_string.weighty = 1;
-			stringPanel.add(stringListScroll, gbl_string);
+			{
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.gridx = 0;
+				gbc.gridy = 0;
+				gbc.gridheight = 4;
+				gbc.anchor = GridBagConstraints.WEST;
+				gbc.fill = GridBagConstraints.BOTH;
+				gbc.insets = new Insets(0, 10, 0, 10);
+				gbc.weightx = 1;
+				gbc.weighty = 1;
+				stringLeftPanel.add(stringListScroll, gbc);
+			}
+
 			//Text pane
 			JTextField textPane = new JTextField();
-			
-			textPane.addKeyListener(new KeyListener() {
+			textPane.addKeyListener(new KeyAdapter()
+			{
 
 				@Override
 				public void keyPressed(KeyEvent event)
 				{
-					if(event.getKeyCode() == KeyEvent.VK_ENTER && textPane.getText() != null && !textPane.getText().isEmpty())
+					if (event.getKeyCode() == KeyEvent.VK_ENTER && textPane.getText() != null && !textPane.getText().isEmpty())
 					{
 						stringList.addElement(textPane.getText());
 						textPane.setText("");
 					}
 				}
-
-				@Override
-				public void keyReleased(KeyEvent event)
-				{}
-
-				@Override
-				public void keyTyped(KeyEvent event)
-				{}
 			});
-			
-			GridBagConstraints gbl_text = new GridBagConstraints();
-			gbl_text.gridx = 0;
-			gbl_text.gridy = 4;
-			gbl_text.anchor = GridBagConstraints.NORTHWEST;
-			gbl_text.fill = GridBagConstraints.HORIZONTAL;
-			gbl_text.insets = new Insets(0, 20, 20, 20);
-			gbl_text.weightx = 1;
-			stringPanel.add(textPane, gbl_text);
-			
-			stringJList.addKeyListener(new KeyListener() {
+			{
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.gridx = 0;
+				gbc.gridy = 4;
+				gbc.anchor = GridBagConstraints.WEST;
+				gbc.fill = GridBagConstraints.HORIZONTAL;
+				gbc.insets = new Insets(0, 10, 0, 10);
+				gbc.weightx = 1;
+				stringLeftPanel.add(textPane, gbc);
+			}
+
+			stringJList.addKeyListener(new KeyAdapter()
+			{
 
 				@Override
 				public void keyPressed(KeyEvent event)
 				{
-					if(event.getKeyCode() == KeyEvent.VK_DELETE)
+					if (event.getKeyCode() == KeyEvent.VK_DELETE)
 					{
 						int[] indexes = stringJList.getSelectedIndices();
 						Arrays.sort(indexes);
 						int[] reversed = IntStream.range(0, indexes.length).map(i -> indexes[indexes.length - i - 1])
-		                    .toArray();
-						for(int i : reversed)
+								.toArray();
+						for (int i : reversed)
+						{
 							stringList.remove(i);
+						}
 					}
 				}
-
-				@Override
-				public void keyReleased(KeyEvent event)
-				{}
-
-				@Override
-				public void keyTyped(KeyEvent event)
-				{}
 			});
-			
+
 			//Buttons
 			//4 panels to position buttons correctly
-			JPanel stringPanel1 = new JPanel();
-			GridBagConstraints gbc_stringPanel1 = new GridBagConstraints();
-			gbc_stringPanel1.gridx = 1;
-			gbc_stringPanel1.weighty = 0.5;
-			stringPanel.add(stringPanel1, gbc_stringPanel1);
-			JPanel stringPanel2 = new JPanel();
-			stringPanel2.setLayout(new GridBagLayout());
-			GridBagConstraints gbc_stringPanel2 = new GridBagConstraints();
-			gbc_stringPanel2.gridx = 1;
-			gbc_stringPanel2.weighty = 0.5;
-			stringPanel.add(stringPanel2, gbc_stringPanel2);
-			JPanel stringPanel3 = new JPanel();
-			stringPanel3.setLayout(new GridBagLayout());
-			GridBagConstraints gbc_stringPanel3 = new GridBagConstraints();
-			gbc_stringPanel3.gridx = 1;
-			gbc_stringPanel3.weighty = 0.5;
-			stringPanel.add(stringPanel3, gbc_stringPanel3);
-			JPanel stringPanel4 = new JPanel();
-			GridBagConstraints gbc_stringPanel4 = new GridBagConstraints();
-			gbc_stringPanel4.gridx = 1;
-			gbc_stringPanel4.weighty = 0.5;
-			stringPanel.add(stringPanel4, gbc_stringPanel4);
-			JButton addString = new JButton("  Add  ");
-			
-			addString.addActionListener(new ActionListener()
+			JPanel paddingPanel1 = new JPanel();
 			{
-				@Override
-				public void actionPerformed(ActionEvent e)
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.gridx = 1;
+				gbc.weighty = 0.5;
+				stringPanel.add(paddingPanel1, gbc);
+			}
+			JPanel addStringPanel = new JPanel();
+			addStringPanel.setLayout(new GridBagLayout());
+			{
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.gridx = 1;
+				gbc.weighty = 0.5;
+				stringPanel.add(addStringPanel, gbc);
+			}
+			JPanel removeStringPanel = new JPanel();
+			removeStringPanel.setLayout(new GridBagLayout());
+			{
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.gridx = 1;
+				gbc.weighty = 0.5;
+				stringPanel.add(removeStringPanel, gbc);
+			}
+			JPanel paddingPanel2 = new JPanel();
+			{
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.gridx = 1;
+				gbc.weighty = 0.5;
+				stringPanel.add(paddingPanel2, gbc);
+			}
+
+			JButton addString = new JButton("   Add   ");
+			addString.addActionListener(e ->
+			{
+				if (textPane.getText() != null && !textPane.getText().isEmpty())
 				{
-					if(textPane.getText() != null && !textPane.getText().isEmpty())
-					{
-						stringList.addElement(textPane.getText());
-						textPane.setText("");
-					}
+					stringList.addElement(textPane.getText());
+					textPane.setText("");
 				}
 			});
-			
-			GridBagConstraints gbc_addString = new GridBagConstraints();
-			gbc_addString.anchor = GridBagConstraints.CENTER;
-			gbc_addString.insets = new Insets(5, 5, 5, 20);
-			stringPanel2.add(addString, gbc_addString);
+			{
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.anchor = GridBagConstraints.CENTER;
+				gbc.insets = new Insets(5, 5, 5, 20);
+				addStringPanel.add(addString, gbc);
+			}
+
 			JButton removeString = new JButton("Remove");
-			
-			removeString.addActionListener(new ActionListener()
+			removeString.addActionListener(e ->
 			{
-				@Override
-				public void actionPerformed(ActionEvent e)
+				int[] indexes = stringJList.getSelectedIndices();
+				Arrays.sort(indexes);
+				int[] reversed = IntStream.range(0, indexes.length).map(i12 -> indexes[indexes.length - i12 - 1])
+						.toArray();
+				for (int i12 : reversed)
 				{
-					int[] indexes = stringJList.getSelectedIndices();
-					Arrays.sort(indexes);
-					int[] reversed = IntStream.range(0, indexes.length).map(i -> indexes[indexes.length - i - 1])
-	                    .toArray();
-					for(int i : reversed)
-						stringList.remove(i);
+					stringList.remove(i12);
 				}
 			});
-			
-			GridBagConstraints gbc_removeString = new GridBagConstraints();
-			gbc_removeString.anchor = GridBagConstraints.CENTER;
-			gbc_removeString.insets = new Insets(5, 5, 5, 20);
-			stringPanel3.add(removeString, gbc_removeString);
+			{
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.anchor = GridBagConstraints.CENTER;
+				gbc.insets = new Insets(5, 5, 5, 20);
+				removeStringPanel.add(removeString, gbc);
+			}
+
 			tabbedPane.addTab(i.getDisplayName(), stringPanel);
 		}
-		
+
 		//Config and Run buttons
-		GridBagConstraints gbl_loadConfig = new GridBagConstraints();
-		gbl_loadConfig.gridy = 2;
-		gbl_loadConfig.anchor = GridBagConstraints.NORTHWEST;
-		gbl_loadConfig.insets = new Insets(0, 20, 20, 10);
 		JButton load = new JButton("Load Config");
-		
-		load.addActionListener(new ActionListener()
 		{
-			@Override
-			public void actionPerformed(ActionEvent e)
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.gridy = 2;
+			gbc.anchor = GridBagConstraints.WEST;
+			gbc.insets = new Insets(0, 20, 20, 10);
+			frame.getContentPane().add(load, gbc);
+		}
+
+		load.addActionListener(e ->
+		{
+			JDialog newFrame = new JDialog(frame, Dialog.ModalityType.APPLICATION_MODAL);
+			newFrame.setTitle("Load Config");
+			newFrame.setBounds(100, 200, 450, 200);
+			newFrame.setLocationRelativeTo(frame);
+			newFrame.setResizable(true);
+			newFrame.getContentPane().setLayout(new GridBagLayout());
+
+			JLabel yourConfiguration = new JLabel("Input your configuration below:");
 			{
-				JFrame newFrame = new JFrame();
-				newFrame.setTitle("Load Config");
-				newFrame.setBounds(100, 100, 450, 200);
-				newFrame.setResizable(true);
-				newFrame.getContentPane().setLayout(new GridBagLayout());
-				
-				JLabel yourConfiguration = new JLabel("Input your configuration below:");
-				GridBagConstraints gbc_yourConfiguration = new GridBagConstraints();
-				gbc_yourConfiguration.anchor = GridBagConstraints.PAGE_START;
-				gbc_yourConfiguration.insets = new Insets(15, 5, 5, 5);
-				gbc_yourConfiguration.gridx = 0;
-				gbc_yourConfiguration.gridy = 0;
-				newFrame.getContentPane().add(yourConfiguration, gbc_yourConfiguration);
-				
-				JScrollPane scrollPane = new JScrollPane();
-				JTextPane textPane = new JTextPane();
-				scrollPane.setViewportView(textPane);
-				GridBagConstraints gbc_scrollPane = new GridBagConstraints();
-				gbc_scrollPane.insets = new Insets(10, 10, 5, 10);
-				gbc_scrollPane.gridx = 0;
-				gbc_scrollPane.gridy = 1;
-				gbc_scrollPane.weightx = 1;
-				gbc_scrollPane.weighty = 1;
-				gbc_scrollPane.fill = GridBagConstraints.BOTH;
-				newFrame.getContentPane().add(scrollPane, gbc_scrollPane);
-				
-				JButton copyButton = new JButton("Submit");
-				GridBagConstraints gbc_copyButton = new GridBagConstraints();
-				gbc_copyButton.insets = new Insets(0, 0, 10, 5);
-				gbc_copyButton.gridx = 0;
-				gbc_copyButton.gridy = 2;
-				newFrame.getContentPane().add(copyButton, gbc_copyButton);
-				copyButton.addActionListener(new ActionListener()
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.anchor = GridBagConstraints.PAGE_START;
+				gbc.insets = new Insets(15, 5, 5, 5);
+				gbc.gridx = 0;
+				gbc.gridy = 0;
+				newFrame.getContentPane().add(yourConfiguration, gbc);
+			}
+
+			JScrollPane scrollPane = new JScrollPane();
+			JTextPane textPane = new JTextPane();
+			scrollPane.setViewportView(textPane);
+			{
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.insets = new Insets(10, 10, 5, 10);
+				gbc.gridx = 0;
+				gbc.gridy = 1;
+				gbc.weightx = 1;
+				gbc.weighty = 1;
+				gbc.fill = GridBagConstraints.BOTH;
+				newFrame.getContentPane().add(scrollPane, gbc);
+			}
+
+			JButton copyButton = new JButton("Submit");
+			{
+				GridBagConstraints gbc = new GridBagConstraints();
+				gbc.insets = new Insets(0, 0, 10, 5);
+				gbc.gridx = 0;
+				gbc.gridy = 2;
+				newFrame.getContentPane().add(copyButton, gbc);
+			}
+			copyButton.addActionListener(e13 ->
+			{
+				String args1 = textPane.getText();
+				Matcher matcher = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(args1);
+				List<String> split = new ArrayList<>();
+				while (matcher.find())
 				{
-					@Override
-					public void actionPerformed(ActionEvent e)
+					split.add(matcher.group(1).replace("\"", ""));
+				}
+				for (ConfigItem i : fields)
+				{
+					i.clearValue();
+				}
+				transformerSelected.clear();
+				for (int i = 0; i < split.size(); i++)
+				{
+					String arg = split.get(i);
+					for (ConfigItem item : fields)
 					{
-						String args = textPane.getText();
-						Matcher matcher = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(args);
-						List<String> split = new ArrayList<>();
-						while(matcher.find())
-							split.add(matcher.group(1).replace("\"", ""));
-						for(ConfigItem i : fields)
-							i.clearValue();
-						transformerSelected.clear();
-						for(int i = 0; i < split.size(); i++)
+						if (arg.equals("-" + item.getFieldName()))
 						{
-							String arg = split.get(i);
-							for(ConfigItem item : fields)
-								if(arg.equals("-" + item.getFieldName()))
-								{
-									if(item.type == ItemType.BOOLEAN)
-										item.setValue(true);
-									else if(split.size() > i + 1)
-									{
-										String value = split.get(i + 1);
-										if(item.type == ItemType.FILE)
-											item.setValue(value);
-										else
-											((DefaultListModel<String>)item.component).addElement(value);
-									}
-									continue;
-								}
-							if(arg.equals("-transformer") && split.size() > i + 1)
+							if (item.type == ItemType.BOOLEAN)
+								item.setValue(true);
+							else if (split.size() > i + 1)
 							{
 								String value = split.get(i + 1);
-								if(NAME_TO_TRANSFORMER.containsKey(value))
-									transformerSelected.addElement(value);
+								if (item.type == ItemType.FILE)
+									item.setValue(value);
+								else
+									((DefaultListModel<String>) item.component).addElement(value);
+							}
+							continue;
+						}
+					}
+					if (arg.equals("-transformer") && split.size() > i + 1)
+					{
+						String value = split.get(i + 1);
+						int pos = value.indexOf(":");
+						if (pos != -1)
+						{
+							String transformerClass = value.substring(0, pos);
+							if (NAME_TO_TRANSFORMER.containsKey(transformerClass))
+							{
+								Class<?> clazz = NAME_TO_TRANSFORMER.get(transformerClass);
+								String shortenedName = TRANSFORMER_TO_NAME.get(clazz);
+								Object cfg = TransformerConfigUtil.getConfig(clazz);
+								if (cfg != null)
+								{
+									Class<?> cfgClazz = cfg.getClass();
+									try
+									{
+										String propStr = value.substring(pos).replace(':', '\n');
+										Properties properties = new Properties();
+										properties.load(new StringReader(propStr));
+										for (String key : properties.stringPropertyNames())
+										{
+											Field field = TransformerConfigUtil.getTransformerConfigFieldWithSuperclass(cfgClazz, key);
+											if (field == null)
+											{
+												System.out.println("Unknown transformer config option " + key);
+												continue;
+											}
+											Class<?> fType = field.getType();
+											field.setAccessible(true);
+											String sval = properties.getProperty(key);
+											try
+											{
+												Object oval = TransformerConfigUtil.convertToObj(fType, sval);
+												if (oval == null)
+												{
+													System.out.println("GUI does not support config type " + fType + ", option name: " + key + " in " +
+																	   shortenedName);
+													continue;
+												}
+												field.set(cfg, oval);
+											} catch (NumberFormatException ex)
+											{
+												System.out.println("Could not convert " + sval + " to " + fType + ", option name: " + key + " in " +
+																   shortenedName);
+												ex.printStackTrace();
+											}
+										}
+									} catch (ReflectiveOperationException | IOException ex)
+									{
+										ex.printStackTrace();
+									}
+								}
+								transformerSelected.addElement(new TransformerWithConfig(shortenedName, cfg));
+							}
+						} else
+						{
+							if (NAME_TO_TRANSFORMER.containsKey(value))
+							{
+								String shortenedName = TRANSFORMER_TO_NAME.get(NAME_TO_TRANSFORMER.get(value));
+								transformerSelected.addElement(new TransformerWithConfig(shortenedName));
 							}
 						}
-						newFrame.dispose();
 					}
-				});
-				newFrame.setVisible(true);
-			}
+				}
+				newFrame.dispose();
+			});
+			newFrame.setVisible(true);
 		});
-		
-		frame.getContentPane().add(load, gbl_loadConfig);
-		GridBagConstraints gbl_saveConfig = new GridBagConstraints();
-		gbl_saveConfig.gridx = 1;
-		gbl_saveConfig.gridy = 2;
-		gbl_saveConfig.anchor = GridBagConstraints.NORTHWEST;
-		gbl_saveConfig.insets = new Insets(0, 10, 20, 20);
+
 		JButton save = new JButton("Save Config");
-		
-		save.addActionListener(new ActionListener()
 		{
-			@Override
-			public void actionPerformed(ActionEvent e)
-			{
-				JFrame newFrame = new JFrame();
-				newFrame.setTitle("Save Config");
-				newFrame.setBounds(100, 100, 450, 200);
-				newFrame.setResizable(true);
-				newFrame.getContentPane().setLayout(new GridBagLayout());
-				
-				JLabel yourConfiguration = new JLabel("Your current configuration is below.");
-				GridBagConstraints gbc_yourConfiguration = new GridBagConstraints();
-				gbc_yourConfiguration.anchor = GridBagConstraints.PAGE_START;
-				gbc_yourConfiguration.insets = new Insets(15, 5, 5, 5);
-				gbc_yourConfiguration.gridx = 0;
-				gbc_yourConfiguration.gridy = 0;
-				newFrame.getContentPane().add(yourConfiguration, gbc_yourConfiguration);
-				
-				JScrollPane scrollPane = new JScrollPane();
-				JTextPane textPane = new JTextPane();
-				textPane.setEditable(false);
-				textPane.setToolTipText(
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.gridx = 1;
+			gbc.gridy = 2;
+			gbc.anchor = GridBagConstraints.WEST;
+			gbc.insets = new Insets(0, 10, 20, 20);
+			frame.getContentPane().add(save, gbc);
+		}
+
+		save.addActionListener(e ->
+		{
+			JDialog newFrame = new JDialog(frame, Dialog.ModalityType.APPLICATION_MODAL);
+			newFrame.setTitle("Save Config");
+			newFrame.setBounds(100, 200, 450, 200);
+			newFrame.setLocationRelativeTo(frame);
+			newFrame.setResizable(true);
+			newFrame.getContentPane().setLayout(new GridBagLayout());
+
+			JLabel yourConfiguration = new JLabel("Your current configuration is below.");
+			GridBagConstraints gbc_yourConfiguration = new GridBagConstraints();
+			gbc_yourConfiguration.anchor = GridBagConstraints.PAGE_START;
+			gbc_yourConfiguration.insets = new Insets(15, 5, 5, 5);
+			gbc_yourConfiguration.gridx = 0;
+			gbc_yourConfiguration.gridy = 0;
+			newFrame.getContentPane().add(yourConfiguration, gbc_yourConfiguration);
+
+			JScrollPane scrollPane = new JScrollPane();
+			JTextPane textPane = new JTextPane();
+			textPane.setEditable(false);
+			textPane.setToolTipText(
 					"Tip: If you copy this and paste it in the \"Load Config\" box, it will automatically input your configuration.");
-				scrollPane.setViewportView(textPane);
-				GridBagConstraints gbc_scrollPane = new GridBagConstraints();
-				gbc_scrollPane.insets = new Insets(10, 10, 5, 10);
-				gbc_scrollPane.gridx = 0;
-				gbc_scrollPane.gridy = 1;
-				gbc_scrollPane.weightx = 1;
-				gbc_scrollPane.weighty = 1;
-				gbc_scrollPane.fill = GridBagConstraints.BOTH;
-				newFrame.getContentPane().add(scrollPane, gbc_scrollPane);
-				
-				//Write args
-				StringBuilder builder = new StringBuilder();
-				builder.append("java -jar deobfuscator.jar");
-				for(ConfigItem i : fields)
-				{
-					if(i.type != ItemType.FILE)
-						continue;
-					if(((String)i.getValue()).split(" ").length > 1)
-						builder.append(" -" + i.getFieldName() +  " " + "\"" + i.getValue() + "\"");
-					else if(!((String)i.getValue()).isEmpty())
-						builder.append(" -" + i.getFieldName() +  " " + i.getValue());
-					else
-						builder.append(" -" + i.getFieldName() +  " \"\"");
-				}
-				for(Object o : transformerSelected.toArray())
-				{
-					String transformer = (String)o;
-					builder.append(" -transformer " + transformer);
-				}
-				for(ConfigItem i : fields)
-				{
-					if(i.type != ItemType.FILELIST && i.type != ItemType.STRINGLIST)
-						continue;
-					for(Object o : (List<?>)i.getValue())
-					if(((String)o).split(" ").length > 1)
-						builder.append(" -" + i.getFieldName() +  " " + "\"" + o + "\"");
-					else if(!((String)o).isEmpty())
-						builder.append(" -" + i.getFieldName() +  " " + o);
-					else
-						builder.append(" -" + i.getFieldName() +  " \"\"");
-				}
-				for(ConfigItem i : fields)
-				{
-					if(i.type != ItemType.BOOLEAN)
-						continue;
-					if((Boolean)i.getValue())
-						builder.append(" -" + i.getFieldName());
-				}
-				textPane.setText(builder.toString());
-				
-				JButton copyButton = new JButton("Copy");
-				GridBagConstraints gbc_copyButton = new GridBagConstraints();
-				gbc_copyButton.insets = new Insets(0, 0, 10, 5);
-				gbc_copyButton.gridx = 0;
-				gbc_copyButton.gridy = 2;
-				newFrame.getContentPane().add(copyButton, gbc_copyButton);
-				copyButton.addActionListener(new ActionListener()
-				{
-					@Override
-					public void actionPerformed(ActionEvent e)
-					{
-						Toolkit.getDefaultToolkit().
-							getSystemClipboard().setContents(new StringSelection(textPane.getText()), null);
-					}
-				});
-				newFrame.setVisible(true);
+			scrollPane.setViewportView(textPane);
+			GridBagConstraints gbc_scrollPane = new GridBagConstraints();
+			gbc_scrollPane.insets = new Insets(10, 10, 5, 10);
+			gbc_scrollPane.gridx = 0;
+			gbc_scrollPane.gridy = 1;
+			gbc_scrollPane.weightx = 1;
+			gbc_scrollPane.weighty = 1;
+			gbc_scrollPane.fill = GridBagConstraints.BOTH;
+			newFrame.getContentPane().add(scrollPane, gbc_scrollPane);
+
+			//Write args
+			StringBuilder builder = new StringBuilder();
+			builder.append("java -jar deobfuscator.jar");
+			for (ConfigItem i : fields)
+			{
+				if (i.type != ItemType.FILE)
+					continue;
+				if (((String) i.getValue()).split(" ").length > 1)
+					builder.append(" -").append(i.getFieldName()).append(" ").append("\"").append(i.getValue()).append("\"");
+				else if (!((String) i.getValue()).isEmpty())
+					builder.append(" -").append(i.getFieldName()).append(" ").append(i.getValue());
+				else
+					builder.append(" -").append(i.getFieldName()).append(" \"\"");
 			}
+			for (Object o : transformerSelected.toArray())
+			{
+				TransformerWithConfig transformer = (TransformerWithConfig) o;
+				builder.append(" -transformer ").append(transformer.toExportString());
+			}
+			for (ConfigItem i : fields)
+			{
+				if (i.type != ItemType.FILELIST && i.type != ItemType.STRINGLIST)
+					continue;
+				for (Object o : (List<?>) i.getValue())
+				{
+					if (((String) o).split(" ").length > 1)
+						builder.append(" -").append(i.getFieldName()).append(" ").append("\"").append(o).append("\"");
+					else if (!((String) o).isEmpty())
+						builder.append(" -").append(i.getFieldName()).append(" ").append(o);
+					else
+						builder.append(" -").append(i.getFieldName()).append(" \"\"");
+				}
+			}
+			for (ConfigItem i : fields)
+			{
+				if (i.type != ItemType.BOOLEAN)
+					continue;
+				if ((Boolean) i.getValue())
+					builder.append(" -").append(i.getFieldName());
+			}
+			textPane.setText(builder.toString());
+
+			JButton copyButton = new JButton("Copy");
+			GridBagConstraints gbc_copyButton = new GridBagConstraints();
+			gbc_copyButton.insets = new Insets(0, 0, 10, 5);
+			gbc_copyButton.gridx = 0;
+			gbc_copyButton.gridy = 2;
+			newFrame.getContentPane().add(copyButton, gbc_copyButton);
+			copyButton.addActionListener(e12 -> Toolkit.getDefaultToolkit().
+					getSystemClipboard().setContents(new StringSelection(textPane.getText()), null));
+			newFrame.setVisible(true);
 		});
-		
-		frame.getContentPane().add(save, gbl_saveConfig);
+
 		GridBagConstraints gbl_run = new GridBagConstraints();
 		gbl_run.anchor = GridBagConstraints.SOUTHEAST;
 		gbl_run.gridx = 1;
@@ -766,143 +962,147 @@ public class SwingWindow
 		gbl_run.ipadx = 15;
 		gbl_run.insets = new Insets(0, 10, 20, 20);
 		JButton run = new JButton("Run");
-		
+
 		JTextArea area = new JTextArea();
-		PrintStream print = new PrintStream(new DeobfuscatorOutputStream(area));
+		PrintStream print = new PrintStream(new DeobfuscatorOutputStream(System.out, area));
 		System.setErr(print);
 		System.setOut(print);
 		deob.hookLogging(print);
-		
-		run.addActionListener(new ActionListener()
+
+		run.addActionListener(e ->
 		{
-			@Override
-			public void actionPerformed(ActionEvent e)
+			run.setEnabled(false);
+			// Start
+			JFrame newFrame = new JFrame();
+			newFrame.setTitle("Console");
+			area.setEditable(false);
+			newFrame.getContentPane().add(new JScrollPane(area));
+			newFrame.pack();
+			newFrame.setSize(800, 600);
+			newFrame.setVisible(true);
+			Thread thread = new Thread(() ->
 			{
-				run.setEnabled(false);
-				// Start
-				JFrame newFrame = new JFrame();
-				newFrame.setTitle("Console");
-				area.setEditable(false);
-				newFrame.getContentPane().add(new JScrollPane(area));
-				newFrame.pack();
-				newFrame.setSize(800, 600);
-				newFrame.setVisible(true);
-				Thread thread = new Thread(new Runnable() 
+				try
 				{
-					@Override
-					public void run()
+					//Set fields
+					for (ConfigItem item : fields)
 					{
-						try
+						item.clearFieldValue();
+						item.setFieldValue();
+					}
+					List<Object> transformerConfigs = new ArrayList<>();
+					for (Object o : transformerSelected.toArray())
+					{
+						TransformerWithConfig transformerWithConfig = (TransformerWithConfig) o;
+						if (transformerWithConfig.getConfig() == null)
 						{
-							//Set fields
-							for(ConfigItem item : fields)
-							{
-								item.clearFieldValue();
-								item.setFieldValue();
-							}
-							List<Class<?>> transformerClasses = new ArrayList<>();
-							for(Object o : transformerSelected.toArray())
-							{
-								String str = (String)o;
-								transformerClasses.add(NAME_TO_TRANSFORMER.get(str));
-							}
-							deob.getConfig().setTransformers(trans, transformerClasses);
-							try
-							{
-								deob.run();
-							}catch(InvocationTargetException e)
-							{
-								if(e.getTargetException().getClass().getName().
-									equals("com.javadeobfuscator.deobfuscator.exceptions.NoClassInPathException"))
-								{
-									for(int i = 0; i < 5; i++)
-						                System.out.println();
-						            System.out.println("** DO NOT OPEN AN ISSUE ON GITHUB **");
-						            System.out.println("Could not locate a class file.");
-						            System.out.println("Have you added the necessary files to the -libraries argument?");
-						            System.out.println("The error was:");
-								}else if(e.getTargetException().getClass().getName().
-									equals("com.javadeobfuscator.deobfuscator.exceptions.PreventableStackOverflowError"))
-								{
-									for(int i = 0; i < 5; i++)
-						                System.out.println();
-						            System.out.println("** DO NOT OPEN AN ISSUE ON GITHUB **");
-						            System.out.println("A StackOverflowError occurred during deobfuscation, but it is preventable");
-						            System.out.println("Try increasing your stack size using the -Xss flag");
-						            System.out.println("The error was:");
-								}else
-								{
-									for(int i = 0; i < 5; i++)
-										System.out.println();
-									System.out.println("Deobfuscation failed. Please open a ticket on GitHub and provide the following error:");
-								}
-								e.getTargetException().printStackTrace();
-							}
-						}catch(Throwable e)
+							transformerConfigs.add(trans.getConfigFor(NAME_TO_TRANSFORMER.get(transformerWithConfig.getShortName())));
+						} else
 						{
-							JFrame newFrame = new JFrame();
-							newFrame.setTitle("Error");
-							newFrame.setBounds(100, 100, 500, 400);
-							newFrame.setResizable(true);
-							newFrame.getContentPane().setLayout(new GridBagLayout());
-							
-							JLabel yourConfiguration = new JLabel("An error occured while running deobfuscator.");
-							GridBagConstraints gbc_yourConfiguration = new GridBagConstraints();
-							gbc_yourConfiguration.anchor = GridBagConstraints.PAGE_START;
-							gbc_yourConfiguration.insets = new Insets(15, 5, 5, 5);
-							gbc_yourConfiguration.gridx = 0;
-							gbc_yourConfiguration.gridy = 0;
-							newFrame.getContentPane().add(yourConfiguration, gbc_yourConfiguration);
-							
-							JScrollPane scrollPane = new JScrollPane();
-							JTextPane textPane = new JTextPane();
-							textPane.setEditable(false);
-							scrollPane.setViewportView(textPane);
-							GridBagConstraints gbc_scrollPane = new GridBagConstraints();
-							gbc_scrollPane.insets = new Insets(2, 10, 5, 10);
-							gbc_scrollPane.gridx = 0;
-							gbc_scrollPane.gridy = 1;
-							gbc_scrollPane.weightx = 1;
-							gbc_scrollPane.weighty = 1;
-							gbc_scrollPane.fill = GridBagConstraints.BOTH;
-							newFrame.getContentPane().add(scrollPane, gbc_scrollPane);
-							StringWriter stringWriter = new StringWriter();
-							PrintWriter writer = new PrintWriter(stringWriter);
-							e.printStackTrace(writer);
-							textPane.setText(stringWriter.toString());
-							Toolkit toolkit = Toolkit.getDefaultToolkit();
-							Dimension screenSize = toolkit.getScreenSize();
-							newFrame.setLocation((screenSize.width - newFrame.getWidth()) / 2, (screenSize.height - newFrame.getHeight()) / 2);
-							newFrame.setVisible(true);
+							transformerConfigs.add(transformerWithConfig.getConfig());
 						}
+					}
+					deob.getConfig().setTransformers(trans, transformerConfigs);
+					try
+					{
+						deob.run();
+					} catch (InvocationTargetException e1)
+					{
+						if (e1.getTargetException().getClass().getName().
+								equals("com.javadeobfuscator.deobfuscator.exceptions.NoClassInPathException"))
+						{
+							for (int i = 0; i < 5; i++)
+							{
+								System.out.println();
+							}
+							System.out.println("** DO NOT OPEN AN ISSUE ON GITHUB **");
+							System.out.println("Could not locate a class file.");
+							System.out.println("Have you added the necessary files to the -libraries argument?");
+							System.out.println("The error was:");
+						} else if (e1.getTargetException().getClass().getName().
+								equals("com.javadeobfuscator.deobfuscator.exceptions.PreventableStackOverflowError"))
+						{
+							for (int i = 0; i < 5; i++)
+							{
+								System.out.println();
+							}
+							System.out.println("** DO NOT OPEN AN ISSUE ON GITHUB **");
+							System.out.println("A StackOverflowError occurred during deobfuscation, but it is preventable");
+							System.out.println("Try increasing your stack size using the -Xss flag");
+							System.out.println("The error was:");
+						} else
+						{
+							for (int i = 0; i < 5; i++)
+							{
+								System.out.println();
+							}
+							System.out.println("Deobfuscation failed. Please open a ticket on GitHub and provide the following error:");
+						}
+						e1.getTargetException().printStackTrace();
+					}
+				} catch (Throwable e1)
+				{
+					JFrame newFrame1 = new JFrame();
+					newFrame1.setTitle("Error");
+					newFrame1.setBounds(100, 100, 500, 400);
+					newFrame1.setResizable(true);
+					newFrame1.getContentPane().setLayout(new GridBagLayout());
+
+					JLabel yourConfiguration = new JLabel("An error occured while running deobfuscator.");
+					GridBagConstraints gbc_yourConfiguration = new GridBagConstraints();
+					gbc_yourConfiguration.anchor = GridBagConstraints.PAGE_START;
+					gbc_yourConfiguration.insets = new Insets(15, 5, 5, 5);
+					gbc_yourConfiguration.gridx = 0;
+					gbc_yourConfiguration.gridy = 0;
+					newFrame1.getContentPane().add(yourConfiguration, gbc_yourConfiguration);
+
+					JScrollPane scrollPane = new JScrollPane();
+					JTextPane textPane = new JTextPane();
+					textPane.setEditable(false);
+					scrollPane.setViewportView(textPane);
+					GridBagConstraints gbc_scrollPane = new GridBagConstraints();
+					gbc_scrollPane.insets = new Insets(2, 10, 5, 10);
+					gbc_scrollPane.gridx = 0;
+					gbc_scrollPane.gridy = 1;
+					gbc_scrollPane.weightx = 1;
+					gbc_scrollPane.weighty = 1;
+					gbc_scrollPane.fill = GridBagConstraints.BOTH;
+					newFrame1.getContentPane().add(scrollPane, gbc_scrollPane);
+					StringWriter stringWriter = new StringWriter();
+					PrintWriter writer = new PrintWriter(stringWriter);
+					e1.printStackTrace(writer);
+					textPane.setText(stringWriter.toString());
+					Toolkit toolkit = Toolkit.getDefaultToolkit();
+					Dimension screenSize = toolkit.getScreenSize();
+					newFrame1.setLocation((screenSize.width - newFrame1.getWidth()) / 2, (screenSize.height - newFrame1.getHeight()) / 2);
+					newFrame1.setVisible(true);
+				}
+				deob.clearClasses();
+			});
+			thread.start();
+			newFrame.addWindowListener(new WindowAdapter()
+			{
+				@Override
+				public void windowClosing(WindowEvent e)
+				{
+					print.flush();
+					area.setText(null);
+					run.setEnabled(true);
+					if (thread.isAlive())
+					{
+						thread.stop();
 						deob.clearClasses();
 					}
-				});
-				thread.start();
-				newFrame.addWindowListener(new WindowAdapter()
-		        {
-		            @Override
-		            public void windowClosing(WindowEvent e)
-		            {
-		            	print.flush();
-		            	area.setText(null);
-		            	run.setEnabled(true);
-		            	if(thread.isAlive())
-		            	{
-		            		thread.stop();
-		            		deob.clearClasses();
-		            	}
-		                e.getWindow().dispose();
-		            }
-		        });
-			}
+					e.getWindow().dispose();
+				}
+			});
 		});
-		
-		frame.getContentPane().add(run, gbl_run);		
+
+		frame.getContentPane().add(run, gbl_run);
 		frame.setVisible(true);
 	}
-	
-	private static void loadWrappers() 
+
+	private static void loadWrappers()
 	{
 		WrapperFactory.setupJarLoader(false);
 		deob = WrapperFactory.getDeobfuscator();
@@ -911,33 +1111,34 @@ public class SwingWindow
 		{
 			config = deob.getConfig();
 			transformers = trans.getTransformers();
-			for(Class<?> clazz : transformers)
+			for (Class<?> clazz : transformers)
 			{
-				TRANSFORMER_TO_NAME.put(clazz, clazz.getName().replace("com.javadeobfuscator.deobfuscator.transformers.", ""));
-				NAME_TO_TRANSFORMER.put(clazz.getName().replace("com.javadeobfuscator.deobfuscator.transformers.", ""), clazz);
+				TRANSFORMER_TO_NAME.put(clazz, toShortName(clazz));
+				NAME_TO_TRANSFORMER.put(toShortName(clazz), clazz);
+				NAME_TO_TRANSFORMER.put(toShortNameLegacy(clazz), clazz);
 			}
-		}catch(FallbackException e)
+		} catch (FallbackException e)
 		{
 			config = null;
 			transformers = null;
 			fallbackLoad(e.path);
 		}
 	}
-	
+
 	private static void fallbackLoad(String path)
 	{
 		try
 		{
 			File file = new File(path);
-			if(!file.exists())
+			if (!file.exists())
 				throw new FallbackException("Loading error", "Path specified does not exist.");
 			try
 			{
 				WrapperFactory.setupJarLoader(file);
-			}catch(IOException e)
+			} catch (IOException e)
 			{
 				throw new FallbackException("Loading error", "IOException while reading file.");
-			}catch(InvalidJarException e)
+			} catch (InvalidJarException e)
 			{
 				throw new FallbackException("Loading error", "Invaild JAR selected. Note that old versions of deobfuscator are not supported!");
 			}
@@ -945,42 +1146,60 @@ public class SwingWindow
 			trans = WrapperFactory.getTransformers();
 			config = deob.getConfig();
 			transformers = trans.getTransformers();
-			for(Class<?> clazz : transformers)
+			for (Class<?> clazz : transformers)
 			{
-				TRANSFORMER_TO_NAME.put(clazz, clazz.getName().replace("com.javadeobfuscator.deobfuscator.transformers.", ""));
-				NAME_TO_TRANSFORMER.put(clazz.getName().replace("com.javadeobfuscator.deobfuscator.transformers.", ""), clazz);
+				TRANSFORMER_TO_NAME.put(clazz, toShortName(clazz));
+				NAME_TO_TRANSFORMER.put(toShortName(clazz), clazz);
+				NAME_TO_TRANSFORMER.put(toShortNameLegacy(clazz), clazz);
 			}
-		}catch(FallbackException e)
+		} catch (FallbackException e)
 		{
 			config = null;
 			transformers = null;
 			fallbackLoad(e.path);
 		}
 	}
-	
-	private static class DeobfuscatorOutputStream extends OutputStream 
+
+	private static String toShortName(Class<?> clazz)
 	{
-	    private JTextArea console;
-	     
-	    public DeobfuscatorOutputStream(JTextArea console) 
-	    {
-	        this.console = console;
-	    }
-	     
-	    @Override
-	    public void write(int b) throws IOException 
-	    {
-	    	console.append(String.valueOf((char)b));
-	    	if(shouldLimitLines.isSelected() && console.getLineCount() > 100)
-	    	{
-	    		try
-	    		{
-	    			console.replaceRange("", 0, console.getLineEndOffset(0));
-	    		}catch(Exception e)
-	    		{
-	    			
-	    		}
-	    	}
-	    }
+		return clazz.getName().replace("com.javadeobfuscator.deobfuscator.transformers.", "")
+				.replace("Transformer", "")
+				.replace("general.peephole.", "peephole.")
+				.replace("general.removers.", "removers.");
+	}
+
+	private static String toShortNameLegacy(Class<?> clazz)
+	{
+		return clazz.getName().replace("com.javadeobfuscator.deobfuscator.transformers.", "");
+	}
+
+	private static class DeobfuscatorOutputStream extends OutputStream
+	{
+
+		private final PrintStream sysOut;
+		private final JTextArea console;
+
+		public DeobfuscatorOutputStream(PrintStream sysOut, JTextArea console)
+		{
+			this.console = console;
+			this.sysOut = sysOut;
+		}
+
+		@Override
+		public void write(int b) throws IOException
+		{
+			sysOut.write(b);
+			console.append(String.valueOf((char) b));
+			if (shouldLimitLines.isSelected() && console.getLineCount() > 100)
+			{
+				try
+				{
+					console.replaceRange("", 0, console.getLineEndOffset(0));
+				} catch (Exception e)
+				{
+					e.printStackTrace(sysOut);
+				}
+			}
+		}
 	}
 }

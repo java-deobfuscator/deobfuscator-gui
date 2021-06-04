@@ -3,7 +3,7 @@
 	<groupId>com.javadeobfuscator</groupId>
 	<artifactId>deobfuscator-gui</artifactId>
 	<url>https://github.com/java-deobfuscator/</url>
-	<version>1.0</version>
+	<version>4.0</version>
 	<name>deobfuscator-gui</name>
 	<description>UI front-end for deobfuscator</description>
 	<dependencies>
@@ -20,17 +20,25 @@
 	</dependencies>
 	<build>
 		<sourceDirectory>src/java</sourceDirectory>
-		<plugins>		
+        <resources>
+            <resource>
+                <directory>src/resources</directory>
+            </resource>
+        </resources>
+		<plugins>
 			<plugin>
+                <groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.6.1</version>
+				<version>3.8.1</version>
 				<configuration>
 					<source>1.8</source>
 					<target>1.8</target>
 				</configuration>
 			</plugin>
 			<plugin>
+                <groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-assembly-plugin</artifactId>
+                <version>3.3.0</version>
 				<executions>
 					<execution>
 						<phase>package</phase>

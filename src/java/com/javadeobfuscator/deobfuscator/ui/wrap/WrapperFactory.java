@@ -41,7 +41,7 @@ public class WrapperFactory {
 	/**
 	 * Set load strategy to loading from specified jar.
 	 * 
-	 * @param jar
+	 * @param file
 	 *            Deobfuscator program jar.
 	 * @throws IOException
 	 *             Jar could not be read.
@@ -55,7 +55,7 @@ public class WrapperFactory {
 	/**
 	 * Set load strategy to loading from adjacent jar files.
 	 * 
-	 * @param recurse
+	 * @param recursive
 	 *            Check sub-directories of adjacent folders.
 	 */
 	public static void setupJarLoader(boolean recursive) {

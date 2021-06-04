@@ -22,15 +22,11 @@ public class Config {
 
 	/**
 	 * Set transformers list.
-	 * 
+	 *
 	 * @param trans
-	 * @param classes
+	 * @param transformerConfigs
 	 */
-	public void setTransformers(Transformers trans, List<Class<?>> classes) throws Exception {
-		List<Object> transformerConfigs = new ArrayList<>();
-		for (Class<?> clazz : classes) {
-			transformerConfigs.add(trans.getConfigFor(clazz));
-		}
+	public void setTransformers(Transformers trans, List<Object> transformerConfigs) throws Exception {
 		Reflect.setFieldO(instance, "transformers", transformerConfigs);
 	}
 }

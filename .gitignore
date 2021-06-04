@@ -10,3 +10,6 @@
 .project
 
 */.project
+
+*.iml
+/.idea
