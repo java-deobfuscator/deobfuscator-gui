@@ -37,7 +37,6 @@ public class TransformerSpecificConfigDialog
 			int gridY = 0;
 			for (Field field : fields)
 			{
-				System.out.println("field: " + field.getName());
 				field.setAccessible(true);
 				Class<?> fType = field.getType();
 				if (fType == String.class || fType == CharSequence.class)
@@ -115,7 +114,6 @@ public class TransformerSpecificConfigDialog
 							return ch;
 						});
 						File file = chooser.showOpenDialog();
-						System.out.println("file = " + file);
 						if (file != null)
 						{
 							try
