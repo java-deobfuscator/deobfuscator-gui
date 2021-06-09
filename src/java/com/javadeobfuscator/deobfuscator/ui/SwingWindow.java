@@ -28,8 +28,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 import javax.swing.*;
@@ -757,12 +755,8 @@ public class SwingWindow
 			copyButton.addActionListener(e13 ->
 			{
 				String args1 = textPane.getText();
-				Matcher matcher = Pattern.compile("([^\"]\\S*|\".*?\")\\s*").matcher(args1);
-				List<String> split = new ArrayList<>();
-				while (matcher.find())
-				{
-					split.add(matcher.group(1));
-				}
+				List<String> split = splitQuoteAware(args1, ' ');
+
 				for (ConfigItem i : fields)
 				{
 					i.clearValue();
@@ -810,22 +804,7 @@ public class SwingWindow
 									try
 									{
 										String cfgStr = value.substring(pos + 1);
-										int start = 0;
-										boolean inQuotes = false;
-										List<String> opts = new ArrayList<>();
-										for (int current = 0; current < cfgStr.length(); current++)
-										{
-											if (cfgStr.charAt(current) == '"')
-											{
-												inQuotes = !inQuotes;
-											} else if (cfgStr.charAt(current) == ':' && !inQuotes)
-											{
-												String str = cfgStr.substring(start, current);
-												opts.add(str);
-												start = current + 1;
-											}
-										}
-										opts.add(cfgStr.substring(start));
+										List<String> opts = splitQuoteAware(cfgStr, ':');
 										for (String opt : opts)
 										{
 											String[] optSplit = opt.split("=", 2);
@@ -1127,6 +1106,29 @@ public class SwingWindow
 
 		frame.getContentPane().add(run, gbl_run);
 		frame.setVisible(true);
+	}
+
+	private static List<String> splitQuoteAware(String args1, char splitChar)
+	{
+		List<String> split = new ArrayList<>();
+		{
+			int start = 0;
+			boolean inQuotes = false;
+			for (int current = 0; current < args1.length(); current++)
+			{
+				if (args1.charAt(current) == '"')
+				{
+					inQuotes = !inQuotes;
+				} else if (args1.charAt(current) == splitChar && !inQuotes)
+				{
+					String str = args1.substring(start, current);
+					split.add(str.trim());
+					start = current + 1;
+				}
+			}
+			split.add(args1.substring(start));
+		}
+		return split;
 	}
 
 	private static void loadWrappers()
