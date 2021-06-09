@@ -36,6 +36,10 @@ public class TransformerWithConfig
 	}
 	
 	public String toExportString() {
+		if (config == null)
+		{
+			return this.shortName;
+		}
 		Set<Field> fields = TransformerConfigUtil.getTransformerConfigFieldsWithSuperclass(config.getClass());
 		StringBuilder sb = new StringBuilder(this.shortName);
 		for (Field field : fields)
