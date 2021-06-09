@@ -759,7 +759,7 @@ public class SwingWindow
 			copyButton.addActionListener(e13 ->
 			{
 				String args1 = textPane.getText();
-				Matcher matcher = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(args1);
+				Matcher matcher = Pattern.compile("([^\"]\\S*|\".*?\")\\s*").matcher(args1);
 				List<String> split = new ArrayList<>();
 				while (matcher.find())
 				{
