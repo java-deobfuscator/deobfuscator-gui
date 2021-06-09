@@ -1,7 +1,5 @@
 package com.javadeobfuscator.deobfuscator.ui.component;
 
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;

@@ -14,7 +14,8 @@ import com.javadeobfuscator.deobfuscator.ui.util.ByteLoader;
 import com.javadeobfuscator.deobfuscator.ui.util.InvalidJarException;
 import com.javadeobfuscator.deobfuscator.ui.util.MiniClassReader;
 
-public class WrapperFactory {
+public class WrapperFactory
+{
 	/**
 	 * Buffer size to use for reading classes from deobfuscator jar.
 	 */
@@ -27,115 +28,135 @@ public class WrapperFactory {
 	/**
 	 * @return Deobfuscator wrapper.
 	 */
-	public static Deobfuscator getDeobfuscator() {
+	public static Deobfuscator getDeobfuscator()
+	{
 		return new Deobfuscator(loader);
 	}
 
 	/**
 	 * @return Transformers wrapper.
 	 */
-	public static Transformers getTransformers() {
+	public static Transformers getTransformers()
+	{
 		return new Transformers(loader);
 	}
 
 	/**
 	 * Set load strategy to loading from specified jar.
-	 * 
-	 * @param file
-	 *            Deobfuscator program jar.
-	 * @throws IOException
-	 *             Jar could not be read.
-	 * @throws InvalidJarException
-	 *             Thrown if jar loaded was not an instance of JavaDeobfuscator
+	 *
+	 * @param file Deobfuscator program jar.
+	 * @throws IOException         Jar could not be read.
+	 * @throws InvalidJarException Thrown if jar loaded was not an instance of JavaDeobfuscator
 	 */
-	public static void setupJarLoader(File file) throws IOException, InvalidJarException {
+	public static void setupJarLoader(File file) throws IOException, InvalidJarException
+	{
 		loader = fromJar(file);
 	}
 
 	/**
 	 * Set load strategy to loading from adjacent jar files.
-	 * 
-	 * @param recursive
-	 *            Check sub-directories of adjacent folders.
+	 *
+	 * @param recursive Check sub-directories of adjacent folders.
 	 */
-	public static void setupJarLoader(boolean recursive) {
+	public static void setupJarLoader(boolean recursive)
+	{
 		loader = auto(recursive);
 	}
 
 	/**
 	 * Create a loader for the deobfuscator jar.
-	 * 
-	 * @param jar
-	 *            Deobfuscator program jar.
-	 * @throws IOException
-	 *             Jar could not be read.
-	 * @throws InvalidJarException
-	 *             Thrown if jar loaded was not an instance of JavaDeobfuscator
+	 *
+	 * @param jar Deobfuscator program jar.
 	 * @return JavaDeobfuscator loader.
+	 * @throws IOException         Jar could not be read.
+	 * @throws InvalidJarException Thrown if jar loaded was not an instance of JavaDeobfuscator
 	 */
-	private static ByteLoader fromJar(File jar) throws IOException, InvalidJarException {
+	private static ByteLoader fromJar(File jar) throws IOException, InvalidJarException
+	{
 		return new ByteLoader(readClasses(jar));
 	}
 
 	/**
-	 * Create a wrapper from the deobfuscator by searching for it in adjacent files /
-	 * sub-directories.
-	 * 
-	 * @param recurse
-	 *            Check sub-directories of adjacent folders.
-	 * @return JavaDeobfuscator loader. {@code null} if no JavaDeobfuscator jar could be
-	 *         found.
+	 * Create a wrapper from the deobfuscator by searching for it in adjacent files / sub-directories.
+	 *
+	 * @param recurse Check sub-directories of adjacent folders.
+	 * @return JavaDeobfuscator loader. {@code null} if no JavaDeobfuscator jar could be found.
 	 */
-	private static ByteLoader auto(boolean recurse) {
+	private static ByteLoader auto(boolean recurse)
+	{
 		return iter(new File(System.getProperty("user.dir")), recurse);
 	}
 
 	/**
 	 * Iterate files to detect the Deobfuscator jar.
-	 * 
+	 *
 	 * @param dir
 	 * @param recurse
 	 * @return JavaDeobfuscator loader.
 	 */
-	private static ByteLoader iter(File dir, boolean recurse) {
+	private static ByteLoader iter(File dir, boolean recurse)
+	{
 		File[] files = dir.listFiles();
 		// return if no files exist in the directory
-		if (files == null) {
+		if (files == null)
+		{
 			return null;
 		}
 		// check for common names
 		File deobfuscator = new File(dir, "deobfuscator.jar");
 		File deobfuscator100 = new File(dir, "deobfuscator-1.0.0.jar");
-		if(deobfuscator.exists())
-			try {
+		if (deobfuscator.exists())
+			try
+			{
 				ByteLoader v = fromJar(deobfuscator);
-				if (v != null) {
+				if (v != null)
+				{
 					return v;
 				}
-			} catch (IOException e) {} catch (InvalidJarException e) {}
-		if(deobfuscator100.exists())
-			try {
+			} catch (IOException e)
+			{
+			} catch (InvalidJarException e)
+			{
+			}
+		if (deobfuscator100.exists())
+			try
+			{
 				ByteLoader v = fromJar(deobfuscator100);
-				if (v != null) {
+				if (v != null)
+				{
 					return v;
 				}
-			} catch (IOException e) {} catch (InvalidJarException e) {}
-		for (File file : files) {
+			} catch (IOException e)
+			{
+			} catch (InvalidJarException e)
+			{
+			}
+		for (File file : files)
+		{
 			// check sub-dirs
-			if (recurse && file.isDirectory()) {
+			if (recurse && file.isDirectory())
+			{
 				ByteLoader v = iter(file, true);
-				if (v != null) {
+				if (v != null)
+				{
 					return v;
 				}
 			}
 			// check files in the directory
-			else if (file.getName().endsWith(".jar")) {
-				try {
+			else if (file.getName().endsWith(".jar"))
+			{
+				try
+				{
 					ByteLoader v = fromJar(file);
-					if (v != null) {
+					if (v != null)
+					{
 						return v;
 					}
-				} catch (IOException e) {} catch (InvalidJarException e) {}
+				} catch (IOException e)
+				{
+				} catch (InvalidJarException e)
+				{
+				}
 			}
 		}
 		return null;
@@ -143,28 +164,33 @@ public class WrapperFactory {
 
 	/**
 	 * Read a map from the given data file.
-	 * 
-	 * @param dataFile
-	 *            File to read from.
+	 *
+	 * @param dataFile File to read from.
 	 * @return Map of class names to their bytecode.
 	 * @throws InvalidJarException
 	 */
-	private static Map<String, byte[]> readClasses(File jar) throws IOException, InvalidJarException {
+	private static Map<String, byte[]> readClasses(File jar) throws IOException, InvalidJarException
+	{
 		Map<String, byte[]> contents = new HashMap<>();
 		boolean found = false;
-		try (ZipFile file = new ZipFile(jar)) {
+		try (ZipFile file = new ZipFile(jar))
+		{
 			// iterate zip entries
 			Enumeration<? extends ZipEntry> entries = file.entries();
-			while (entries.hasMoreElements()) {
+			while (entries.hasMoreElements())
+			{
 				ZipEntry entry = entries.nextElement();
 				// skip directories
-				if (entry.isDirectory()) continue;
+				if (entry.isDirectory())
+					continue;
 				// skip non-classes (Deobfuscator doesn't have any resources aside for META)
 				String name = entry.getName();
-				if (!name.endsWith(".class")) {
+				if (!name.endsWith(".class"))
+				{
 					continue;
 				}
-				try (InputStream is = file.getInputStream(entry)) {
+				try (InputStream is = file.getInputStream(entry))
+				{
 					// skip non-classes (Deobfuscator doesn't have any resources aside for
 					// META, which we will bundle to appease SLF4J's ServiceLoader screwery.)
 					byte[] value = from(is);
@@ -172,13 +198,14 @@ public class WrapperFactory {
 					try
 					{
 						className = new MiniClassReader(value).getClassName();
-					}catch(Exception e)
+					} catch (Exception e)
 					{
 						continue;
 					}
 					// We know this class is in the deobfuscator jar, so if the jar does 
 					// not contain it, it is not the correct file.
-					if (className.contains("com/javadeobfuscator/deobfuscator/Deobfuscator")) {
+					if (className.contains("com/javadeobfuscator/deobfuscator/Deobfuscator"))
+					{
 						found = true;
 					}
 					contents.put(className.replace("/", "."), value);
@@ -186,7 +213,8 @@ public class WrapperFactory {
 			}
 		}
 		// check to ensure expected content of jar file
-		if (!found) {
+		if (!found)
+		{
 			throw new InvalidJarException();
 		}
 		return contents;
@@ -195,17 +223,18 @@ public class WrapperFactory {
 	/**
 	 * Reads the bytes from the InputStream into a byte array.
 	 *
-	 * @param is
-	 *            InputStream to read from.
+	 * @param is InputStream to read from.
 	 * @return byte array representation of the input stream.
-	 * @throws IOException
-	 *             Thrown if the given input stream cannot be read from.
+	 * @throws IOException Thrown if the given input stream cannot be read from.
 	 */
-	private static byte[] from(InputStream is) throws IOException {
-		try (ByteArrayOutputStream buffer = new ByteArrayOutputStream()) {
+	private static byte[] from(InputStream is) throws IOException
+	{
+		try (ByteArrayOutputStream buffer = new ByteArrayOutputStream())
+		{
 			int r;
 			byte[] data = new byte[BUFF_SIZE];
-			while ((r = is.read(data, 0, data.length)) != -1) {
+			while ((r = is.read(data, 0, data.length)) != -1)
+			{
 				buffer.write(data, 0, r);
 			}
 			buffer.flush();

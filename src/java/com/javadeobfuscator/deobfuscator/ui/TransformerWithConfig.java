@@ -11,11 +11,13 @@ public class TransformerWithConfig
 	private final String shortName;
 	private Object config;
 
-	public TransformerWithConfig(String shortName) {
+	public TransformerWithConfig(String shortName)
+	{
 		this.shortName = shortName;
 	}
 
-	public TransformerWithConfig(String shortName, Object config) {
+	public TransformerWithConfig(String shortName, Object config)
+	{
 		this.shortName = shortName;
 		this.config = config;
 	}
@@ -34,8 +36,9 @@ public class TransformerWithConfig
 	{
 		this.config = config;
 	}
-	
-	public String toExportString() {
+
+	public String toExportString()
+	{
 		if (config == null)
 		{
 			return this.shortName;
@@ -48,14 +51,17 @@ public class TransformerWithConfig
 			try
 			{
 				Object val = field.get(config);
-				if (val == null) {
+				if (val == null)
+				{
 					continue;
 				}
 				sb.append(':').append(field.getName()).append('=');
-				if (val instanceof File) {
+				if (val instanceof File)
+				{
 					sb.append('"').append(((File) val).getAbsolutePath()).append('"');
-				} else {
-				sb.append(val);
+				} else
+				{
+					sb.append(val);
 				}
 			} catch (IllegalAccessException e)
 			{
