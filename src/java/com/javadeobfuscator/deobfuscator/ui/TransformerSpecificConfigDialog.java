@@ -14,6 +14,8 @@ import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JTextField;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 
 import com.javadeobfuscator.deobfuscator.ui.component.SynchronousJFXFileChooser;
 import com.javadeobfuscator.deobfuscator.ui.util.SwingUtil;
@@ -46,14 +48,30 @@ public class TransformerSpecificConfigDialog
 					JTextField textField = new JTextField(1);
 					SwingUtil.registerGBC(root, textField, 1, gridY, 0, 1);
 					label.setLabelFor(textField);
-					textField.addActionListener(e ->
+					textField.getDocument().addDocumentListener(new DocumentListener()
 					{
-						try
+						@Override
+						public void insertUpdate(DocumentEvent e)
 						{
-							field.set(config, TransformerConfigUtil.convertToObj(fType, textField.getText()));
-						} catch (IllegalAccessException illegalAccessException)
+							changedUpdate(e);
+						}
+
+						@Override
+						public void removeUpdate(DocumentEvent e)
 						{
-							illegalAccessException.printStackTrace();
+							changedUpdate(e);
+						}
+
+						@Override
+						public void changedUpdate(DocumentEvent e)
+						{
+							try
+							{
+								field.set(config, TransformerConfigUtil.convertToObj(fType, textField.getText()));
+							} catch (IllegalAccessException illegalAccessException)
+							{
+								illegalAccessException.printStackTrace();
+							}
 						}
 					});
 				} else if (fType == File.class)
@@ -63,21 +81,37 @@ public class TransformerSpecificConfigDialog
 
 					File currFile = (File) field.get(config);
 					String path = currFile == null ? "" : currFile.getAbsolutePath();
-					JTextField textField = new JTextField(path, 1);
+					JTextField textField = new JTextField(path);
 					SwingUtil.registerGBC(root, textField, 1, gridY, gbc ->
 					{
 						gbc.weightx = 1;
 						gbc.fill = GridBagConstraints.HORIZONTAL;
 					});
 					label.setLabelFor(textField);
-					textField.addActionListener(e ->
+					textField.getDocument().addDocumentListener(new DocumentListener()
 					{
-						try
+						@Override
+						public void insertUpdate(DocumentEvent e)
 						{
-							field.set(config, TransformerConfigUtil.convertToObj(fType, textField.getText()));
-						} catch (IllegalAccessException ex)
+							changedUpdate(e);
+						}
+
+						@Override
+						public void removeUpdate(DocumentEvent e)
 						{
-							ex.printStackTrace();
+							changedUpdate(e);
+						}
+
+						@Override
+						public void changedUpdate(DocumentEvent e)
+						{
+							try
+							{
+								field.set(config, TransformerConfigUtil.convertToObj(fType, textField.getText()));
+							} catch (IllegalAccessException ex)
+							{
+								ex.printStackTrace();
+							}
 						}
 					});
 
@@ -203,19 +237,35 @@ public class TransformerSpecificConfigDialog
 			}
 		});
 		label.setLabelFor(textField);
-		textField.addActionListener(e ->
+		textField.getDocument().addDocumentListener(new DocumentListener()
 		{
-			String text = textField.getText();
-			if (!verifier.test(text))
+			@Override
+			public void insertUpdate(DocumentEvent e)
 			{
-				return;
+				changedUpdate(e);
 			}
-			try
+
+			@Override
+			public void removeUpdate(DocumentEvent e)
 			{
-				field.set(config, TransformerConfigUtil.convertToObj(fType, text));
-			} catch (IllegalAccessException ex)
+				changedUpdate(e);
+			}
+
+			@Override
+			public void changedUpdate(DocumentEvent e)
 			{
-				ex.printStackTrace();
+				String text = textField.getText();
+				if (!verifier.test(text))
+				{
+					return;
+				}
+				try
+				{
+					field.set(config, TransformerConfigUtil.convertToObj(fType, text));
+				} catch (IllegalAccessException ex)
+				{
+					ex.printStackTrace();
+				}
 			}
 		});
 	}
