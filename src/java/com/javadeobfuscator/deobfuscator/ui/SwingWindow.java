@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.PrintWriter;
-import java.io.StringReader;
 import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -29,9 +28,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 import javax.swing.*;
@@ -759,12 +755,8 @@ public class SwingWindow
 			copyButton.addActionListener(e13 ->
 			{
 				String args1 = textPane.getText();
-				Matcher matcher = Pattern.compile("([^\"]\\S*|\".+?\")\\s*").matcher(args1);
-				List<String> split = new ArrayList<>();
-				while (matcher.find())
-				{
-					split.add(matcher.group(1).replace("\"", ""));
-				}
+				List<String> split = splitQuoteAware(args1, ' ');
+
 				for (ConfigItem i : fields)
 				{
 					i.clearValue();
@@ -782,6 +774,10 @@ public class SwingWindow
 							else if (split.size() > i + 1)
 							{
 								String value = split.get(i + 1);
+								if (value.charAt(0) == '"' && value.charAt(value.length() - 1) == '"')
+								{
+									value = value.substring(1, value.length() - 1);
+								}
 								if (item.type == ItemType.FILE)
 									item.setValue(value);
 								else
@@ -807,11 +803,22 @@ public class SwingWindow
 									Class<?> cfgClazz = cfg.getClass();
 									try
 									{
-										String propStr = value.substring(pos).replace(':', '\n');
-										Properties properties = new Properties();
-										properties.load(new StringReader(propStr));
-										for (String key : properties.stringPropertyNames())
+										String cfgStr = value.substring(pos + 1);
+										List<String> opts = splitQuoteAware(cfgStr, ':');
+										for (String opt : opts)
 										{
+											String[] optSplit = opt.split("=", 2);
+											if (optSplit.length != 2)
+											{
+												System.out.println("Transformer config option without value: " + opt);
+												continue;
+											}
+											String key = optSplit[0];
+											String sval = optSplit[1];
+											if (sval.charAt(0) == '"' && sval.charAt(sval.length() - 1) == '"')
+											{
+												sval = sval.substring(1, sval.length() - 1);
+											}
 											Field field = TransformerConfigUtil.getTransformerConfigFieldWithSuperclass(cfgClazz, key);
 											if (field == null)
 											{
@@ -820,7 +827,6 @@ public class SwingWindow
 											}
 											Class<?> fType = field.getType();
 											field.setAccessible(true);
-											String sval = properties.getProperty(key);
 											try
 											{
 												Object oval = TransformerConfigUtil.convertToObj(fType, sval);
@@ -838,7 +844,7 @@ public class SwingWindow
 												ex.printStackTrace();
 											}
 										}
-									} catch (ReflectiveOperationException | IOException ex)
+									} catch (ReflectiveOperationException ex)
 									{
 										ex.printStackTrace();
 									}
@@ -1100,6 +1106,29 @@ public class SwingWindow
 
 		frame.getContentPane().add(run, gbl_run);
 		frame.setVisible(true);
+	}
+
+	private static List<String> splitQuoteAware(String args1, char splitChar)
+	{
+		List<String> split = new ArrayList<>();
+		{
+			int start = 0;
+			boolean inQuotes = false;
+			for (int current = 0; current < args1.length(); current++)
+			{
+				if (args1.charAt(current) == '"')
+				{
+					inQuotes = !inQuotes;
+				} else if (args1.charAt(current) == splitChar && !inQuotes)
+				{
+					String str = args1.substring(start, current);
+					split.add(str.trim());
+					start = current + 1;
+				}
+			}
+			split.add(args1.substring(start));
+		}
+		return split;
 	}
 
 	private static void loadWrappers()

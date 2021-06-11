@@ -10,7 +10,8 @@ import com.javadeobfuscator.deobfuscator.ui.SwingWindow;
 
 public class TransformerConfigUtil
 {
-	private TransformerConfigUtil() {
+	private TransformerConfigUtil()
+	{
 		throw new UnsupportedOperationException();
 	}
 
