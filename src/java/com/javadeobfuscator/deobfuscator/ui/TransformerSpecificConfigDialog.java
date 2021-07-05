@@ -10,6 +10,7 @@ import java.util.function.Predicate;
 import javax.swing.InputVerifier;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
@@ -27,6 +28,37 @@ public class TransformerSpecificConfigDialog
 	private TransformerSpecificConfigDialog()
 	{
 		throw new UnsupportedOperationException();
+	}
+	
+	public static class TypeMeta {
+		public int count;
+		public boolean wideWindow;
+
+		public TypeMeta(int count, boolean wideWindow)
+		{
+			this.count = count;
+			this.wideWindow = wideWindow;
+		}
+	}
+	
+	public static TypeMeta getTypeMeta(TransformerWithConfig tconfig) {
+		int count = 0;
+		boolean wideWindow = false;
+		Set<Field> fields = TransformerConfigUtil.getTransformerConfigFieldsWithSuperclass(tconfig.getConfig().getClass());
+
+		for (Field field : fields)
+		{
+			Class<?> t = field.getType();
+			if (t.isEnum() || t == boolean.class || t == Boolean.class || t == byte.class
+				|| t == Byte.class || t == short.class || t == Short.class || t == int.class || t == Integer.class || t == long.class || t == Long.class
+				|| t == float.class || t == Float.class || t == double.class || t == Double.class) {
+				count++;
+			} else if (t == File.class || t == String.class || t == CharSequence.class) {
+				count++;
+				wideWindow = true;
+			}
+		}
+		return new TypeMeta(count, wideWindow);
 	}
 
 	public static void fill(JDialog jd, TransformerWithConfig tconfig)
@@ -192,6 +224,26 @@ public class TransformerSpecificConfigDialog
 				} else if (fType == double.class || fType == Double.class)
 				{
 					numberInput(root, config, gridY, field, fType, numberValidator(Double::parseDouble));
+				} else if (fType.isEnum())
+				{
+					JLabel label = new JLabel(field.getName() + ':');
+					SwingUtil.registerGBC(root, label, 0, gridY);
+					JComboBox<?> comboBox = new JComboBox<>(fType.getEnumConstants());
+					SwingUtil.registerGBC(root, comboBox, 1, gridY, 0, 1);
+					label.setLabelFor(comboBox);
+					comboBox.setEditable(false);
+					comboBox.setSelectedItem(field.get(config));
+					comboBox.addActionListener(e -> {
+						try
+						{
+							field.set(config, comboBox.getSelectedItem());
+						} catch (IllegalAccessException ex)
+						{
+							ex.printStackTrace();
+						}
+					});
+				} else {
+					System.out.println("Unknown config field type " + fType + " " + field.getName() + " in transformer " + tconfig.getShortName());
 				}
 				++gridY;
 			}

@@ -8,7 +8,7 @@ import java.util.function.Consumer;
 
 public class SwingUtil
 {
-	public SwingUtil()
+	private SwingUtil()
 	{
 		throw new UnsupportedOperationException();
 	}
