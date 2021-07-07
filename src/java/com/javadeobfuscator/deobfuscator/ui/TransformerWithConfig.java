@@ -59,6 +59,9 @@ public class TransformerWithConfig
 				if (val instanceof File)
 				{
 					sb.append('"').append(((File) val).getAbsolutePath()).append('"');
+				} else if (val instanceof Enum)
+				{
+					sb.append(((Enum<?>) val).name());
 				} else
 				{
 					sb.append(val);

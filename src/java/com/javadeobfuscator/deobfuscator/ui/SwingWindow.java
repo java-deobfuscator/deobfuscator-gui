@@ -303,8 +303,9 @@ public class SwingWindow
 					}
 
 					String title = "Options for transformer " + (index + 1) + ": " + tConfig.getShortName();
+					TransformerSpecificConfigDialog.TypeMeta meta = TransformerSpecificConfigDialog.getTypeMeta(tConfig);
 					JDialog jd = new JDialog(frame, title, Dialog.ModalityType.APPLICATION_MODAL);
-					jd.setBounds(100, 200, 450, 200);
+					jd.setBounds(100, 200, meta.wideWindow ? 450 : 370, 60 + 40 * meta.count);
 					jd.setLocationRelativeTo(frame);
 					jd.getContentPane().setLayout(new GridBagLayout());
 					jd.getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW).put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), "Close");
