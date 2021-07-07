@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 import javax.swing.*;
@@ -56,12 +57,30 @@ public class SwingWindow
 	private static Config config;
 	private static List<Class<?>> transformers;
 	private static JCheckBoxMenuItem shouldLimitLines;
+	private static JCheckBoxMenuItem storeConfigOnClose;
 	private static final Map<Class<?>, String> TRANSFORMER_TO_NAME = new HashMap<>();
 	private static final Map<String, Class<?>> NAME_TO_TRANSFORMER = new HashMap<>();
 
 	public static void main(String[] args)
 	{
-		SynchronousJFXCaller.init();
+		try
+		{
+			SynchronousJFXCaller.init();
+		} catch (NoClassDefFoundError e)
+		{
+			e.printStackTrace();
+			try
+			{
+				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e2)
+			{
+				e2.printStackTrace();
+			}
+			JOptionPane.showMessageDialog(null, "You need a JVM with JavaFX (an non-headless installation).\n\n" +
+												"Could not find class " + e.getMessage(), "Deobfuscator GUI", JOptionPane.ERROR_MESSAGE);
+			System.exit(1);
+			return;
+		}
 		try
 		{
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -84,7 +103,14 @@ public class SwingWindow
 		menuBar.add(menu);
 		shouldLimitLines = new JCheckBoxMenuItem("Limit Console Lines");
 		menu.add(shouldLimitLines);
+		storeConfigOnClose = new JCheckBoxMenuItem("Store config on close", true);
+		menu.add(storeConfigOnClose);
 		frame.setJMenuBar(menuBar);
+
+		//GuiConfig
+		GuiConfig.read();
+		shouldLimitLines.setState(GuiConfig.isLimitConsoleLines());
+		storeConfigOnClose.setState(GuiConfig.getStoreConfigOnClose());
 
 		//Deobfuscator Input
 		JPanel inputPnl = new JPanel();
@@ -136,18 +162,51 @@ public class SwingWindow
 			}
 			button.addActionListener(e ->
 			{
-				File selectedFile = new SynchronousJFXFileChooser(() ->
+				SynchronousJFXFileChooser fileChooser = new SynchronousJFXFileChooser(() ->
 				{
 					FileChooser ch = new FileChooser();
 					ch.setTitle("Select " + i.getDisplayName());
 					Object value = i.getValue();
+					boolean setDir = false;
+					boolean setFile = false;
 					if (value instanceof String && !((String) value).trim().isEmpty())
 					{
-						File f = new File((String) value);
+						File f = new File((String) value).getAbsoluteFile();
 						if (f.exists())
+						{
 							ch.setInitialFileName(f.getName());
+							setFile = true;
+						}
 						if (f.getParentFile().exists())
+						{
 							ch.setInitialDirectory(f.getParentFile());
+							setDir = true;
+						}
+					}
+					if (!setFile && i.getDisplayName().equals("Output"))
+					{
+						ch.setInitialFileName("output.jar");
+					}
+					if (!setDir && i.getDisplayName().equals("Output"))
+					{
+						Optional<ConfigItem> input = fields.stream().filter(ci -> ci.getDisplayName().equals("Input")).findAny();
+						if (input.isPresent())
+						{
+							Object value2 = input.get().getValue();
+							if (value2 instanceof String && !((String) value2).trim().isEmpty())
+							{
+								File f = new File((String) value2).getAbsoluteFile();
+								if (f.getParentFile().exists())
+								{
+									ch.setInitialDirectory(f.getParentFile());
+									setDir = true;
+								}
+							}
+						}
+					}
+					if (!setDir)
+					{
+						ch.setInitialDirectory(new File("abc").getAbsoluteFile().getParentFile());
 					}
 					ch.getExtensionFilters().addAll(
 							new FileChooser.ExtensionFilter("Jar and Zip files", "*.jar", "*.zip"),
@@ -155,7 +214,15 @@ public class SwingWindow
 							new FileChooser.ExtensionFilter("Zip files", "*.zip"),
 							new FileChooser.ExtensionFilter("All Files", "*.*"));
 					return ch;
-				}).showOpenDialog();
+				});
+				File selectedFile;
+				if (i.getDisplayName().equals("Input"))
+				{
+					selectedFile = fileChooser.showOpenDialog();
+				} else
+				{
+					selectedFile = fileChooser.showSaveDialog();
+				}
 				if (selectedFile != null)
 				{
 					String path = selectedFile.toString();
@@ -714,12 +781,12 @@ public class SwingWindow
 
 		load.addActionListener(e ->
 		{
-			JDialog newFrame = new JDialog(frame, Dialog.ModalityType.APPLICATION_MODAL);
-			newFrame.setTitle("Load Config");
-			newFrame.setBounds(100, 200, 450, 200);
-			newFrame.setLocationRelativeTo(frame);
-			newFrame.setResizable(true);
-			newFrame.getContentPane().setLayout(new GridBagLayout());
+			JDialog loadConfigFrame = new JDialog(frame, Dialog.ModalityType.APPLICATION_MODAL);
+			loadConfigFrame.setTitle("Load Config");
+			loadConfigFrame.setBounds(100, 200, 450, 200);
+			loadConfigFrame.setLocationRelativeTo(frame);
+			loadConfigFrame.setResizable(true);
+			loadConfigFrame.getContentPane().setLayout(new GridBagLayout());
 
 			JLabel yourConfiguration = new JLabel("Input your configuration below:");
 			{
@@ -728,7 +795,7 @@ public class SwingWindow
 				gbc.insets = new Insets(15, 5, 5, 5);
 				gbc.gridx = 0;
 				gbc.gridy = 0;
-				newFrame.getContentPane().add(yourConfiguration, gbc);
+				loadConfigFrame.getContentPane().add(yourConfiguration, gbc);
 			}
 
 			JScrollPane scrollPane = new JScrollPane();
@@ -742,129 +809,24 @@ public class SwingWindow
 				gbc.weightx = 1;
 				gbc.weighty = 1;
 				gbc.fill = GridBagConstraints.BOTH;
-				newFrame.getContentPane().add(scrollPane, gbc);
+				loadConfigFrame.getContentPane().add(scrollPane, gbc);
 			}
 
-			JButton copyButton = new JButton("Submit");
+			JButton submitButton = new JButton("Submit");
 			{
 				GridBagConstraints gbc = new GridBagConstraints();
 				gbc.insets = new Insets(0, 0, 10, 5);
 				gbc.gridx = 0;
 				gbc.gridy = 2;
-				newFrame.getContentPane().add(copyButton, gbc);
+				loadConfigFrame.getContentPane().add(submitButton, gbc);
 			}
-			copyButton.addActionListener(e13 ->
+			submitButton.addActionListener(e13 ->
 			{
 				String args1 = textPane.getText();
-				List<String> split = splitQuoteAware(args1, ' ');
-
-				for (ConfigItem i : fields)
-				{
-					i.clearValue();
-				}
-				transformerSelected.clear();
-				for (int i = 0; i < split.size(); i++)
-				{
-					String arg = split.get(i);
-					for (ConfigItem item : fields)
-					{
-						if (arg.equals("-" + item.getFieldName()))
-						{
-							if (item.type == ItemType.BOOLEAN)
-								item.setValue(true);
-							else if (split.size() > i + 1)
-							{
-								String value = split.get(i + 1);
-								if (value.charAt(0) == '"' && value.charAt(value.length() - 1) == '"')
-								{
-									value = value.substring(1, value.length() - 1);
-								}
-								if (item.type == ItemType.FILE)
-									item.setValue(value);
-								else
-									((DefaultListModel<String>) item.component).addElement(value);
-							}
-							continue;
-						}
-					}
-					if (arg.equals("-transformer") && split.size() > i + 1)
-					{
-						String value = split.get(i + 1);
-						int pos = value.indexOf(":");
-						if (pos != -1)
-						{
-							String transformerClass = value.substring(0, pos);
-							if (NAME_TO_TRANSFORMER.containsKey(transformerClass))
-							{
-								Class<?> clazz = NAME_TO_TRANSFORMER.get(transformerClass);
-								String shortenedName = TRANSFORMER_TO_NAME.get(clazz);
-								Object cfg = TransformerConfigUtil.getConfig(clazz);
-								if (cfg != null)
-								{
-									Class<?> cfgClazz = cfg.getClass();
-									try
-									{
-										String cfgStr = value.substring(pos + 1);
-										List<String> opts = splitQuoteAware(cfgStr, ':');
-										for (String opt : opts)
-										{
-											String[] optSplit = opt.split("=", 2);
-											if (optSplit.length != 2)
-											{
-												System.out.println("Transformer config option without value: " + opt);
-												continue;
-											}
-											String key = optSplit[0];
-											String sval = optSplit[1];
-											if (sval.charAt(0) == '"' && sval.charAt(sval.length() - 1) == '"')
-											{
-												sval = sval.substring(1, sval.length() - 1);
-											}
-											Field field = TransformerConfigUtil.getTransformerConfigFieldWithSuperclass(cfgClazz, key);
-											if (field == null)
-											{
-												System.out.println("Unknown transformer config option " + key);
-												continue;
-											}
-											Class<?> fType = field.getType();
-											field.setAccessible(true);
-											try
-											{
-												Object oval = TransformerConfigUtil.convertToObj(fType, sval);
-												if (oval == null)
-												{
-													System.out.println("GUI does not support config type " + fType + ", option name: " + key + " in " +
-																	   shortenedName);
-													continue;
-												}
-												field.set(cfg, oval);
-											} catch (NumberFormatException ex)
-											{
-												System.out.println("Could not convert " + sval + " to " + fType + ", option name: " + key + " in " +
-																   shortenedName);
-												ex.printStackTrace();
-											}
-										}
-									} catch (ReflectiveOperationException ex)
-									{
-										ex.printStackTrace();
-									}
-								}
-								transformerSelected.addElement(new TransformerWithConfig(shortenedName, cfg));
-							}
-						} else
-						{
-							if (NAME_TO_TRANSFORMER.containsKey(value))
-							{
-								String shortenedName = TRANSFORMER_TO_NAME.get(NAME_TO_TRANSFORMER.get(value));
-								transformerSelected.addElement(new TransformerWithConfig(shortenedName));
-							}
-						}
-					}
-				}
-				newFrame.dispose();
+				readAndApplyConfig(fields, transformerSelected, args1);
+				loadConfigFrame.dispose();
 			});
-			newFrame.setVisible(true);
+			loadConfigFrame.setVisible(true);
 		});
 
 		JButton save = new JButton("Save Config");
@@ -879,12 +841,12 @@ public class SwingWindow
 
 		save.addActionListener(e ->
 		{
-			JDialog newFrame = new JDialog(frame, Dialog.ModalityType.APPLICATION_MODAL);
-			newFrame.setTitle("Save Config");
-			newFrame.setBounds(100, 200, 450, 200);
-			newFrame.setLocationRelativeTo(frame);
-			newFrame.setResizable(true);
-			newFrame.getContentPane().setLayout(new GridBagLayout());
+			JDialog saveConfigFrame = new JDialog(frame, Dialog.ModalityType.APPLICATION_MODAL);
+			saveConfigFrame.setTitle("Save Config");
+			saveConfigFrame.setBounds(100, 200, 450, 200);
+			saveConfigFrame.setLocationRelativeTo(frame);
+			saveConfigFrame.setResizable(true);
+			saveConfigFrame.getContentPane().setLayout(new GridBagLayout());
 
 			JLabel yourConfiguration = new JLabel("Your current configuration is below.");
 			GridBagConstraints gbc_yourConfiguration = new GridBagConstraints();
@@ -892,7 +854,7 @@ public class SwingWindow
 			gbc_yourConfiguration.insets = new Insets(15, 5, 5, 5);
 			gbc_yourConfiguration.gridx = 0;
 			gbc_yourConfiguration.gridy = 0;
-			newFrame.getContentPane().add(yourConfiguration, gbc_yourConfiguration);
+			saveConfigFrame.getContentPane().add(yourConfiguration, gbc_yourConfiguration);
 
 			JScrollPane scrollPane = new JScrollPane();
 			JTextPane textPane = new JTextPane();
@@ -907,59 +869,21 @@ public class SwingWindow
 			gbc_scrollPane.weightx = 1;
 			gbc_scrollPane.weighty = 1;
 			gbc_scrollPane.fill = GridBagConstraints.BOTH;
-			newFrame.getContentPane().add(scrollPane, gbc_scrollPane);
+			saveConfigFrame.getContentPane().add(scrollPane, gbc_scrollPane);
 
 			//Write args
-			StringBuilder builder = new StringBuilder();
-			builder.append("java -jar deobfuscator.jar");
-			for (ConfigItem i : fields)
-			{
-				if (i.type != ItemType.FILE)
-					continue;
-				if (((String) i.getValue()).split(" ").length > 1)
-					builder.append(" -").append(i.getFieldName()).append(" ").append("\"").append(i.getValue()).append("\"");
-				else if (!((String) i.getValue()).isEmpty())
-					builder.append(" -").append(i.getFieldName()).append(" ").append(i.getValue());
-				else
-					builder.append(" -").append(i.getFieldName()).append(" \"\"");
-			}
-			for (Object o : transformerSelected.toArray())
-			{
-				TransformerWithConfig transformer = (TransformerWithConfig) o;
-				builder.append(" -transformer ").append(transformer.toExportString());
-			}
-			for (ConfigItem i : fields)
-			{
-				if (i.type != ItemType.FILELIST && i.type != ItemType.STRINGLIST)
-					continue;
-				for (Object o : (List<?>) i.getValue())
-				{
-					if (((String) o).split(" ").length > 1)
-						builder.append(" -").append(i.getFieldName()).append(" ").append("\"").append(o).append("\"");
-					else if (!((String) o).isEmpty())
-						builder.append(" -").append(i.getFieldName()).append(" ").append(o);
-					else
-						builder.append(" -").append(i.getFieldName()).append(" \"\"");
-				}
-			}
-			for (ConfigItem i : fields)
-			{
-				if (i.type != ItemType.BOOLEAN)
-					continue;
-				if ((Boolean) i.getValue())
-					builder.append(" -").append(i.getFieldName());
-			}
-			textPane.setText(builder.toString());
+			String t = createConfig(fields, transformerSelected);
+			textPane.setText(t);
 
 			JButton copyButton = new JButton("Copy");
 			GridBagConstraints gbc_copyButton = new GridBagConstraints();
 			gbc_copyButton.insets = new Insets(0, 0, 10, 5);
 			gbc_copyButton.gridx = 0;
 			gbc_copyButton.gridy = 2;
-			newFrame.getContentPane().add(copyButton, gbc_copyButton);
+			saveConfigFrame.getContentPane().add(copyButton, gbc_copyButton);
 			copyButton.addActionListener(e12 -> Toolkit.getDefaultToolkit().
 					getSystemClipboard().setContents(new StringSelection(textPane.getText()), null));
-			newFrame.setVisible(true);
+			saveConfigFrame.setVisible(true);
 		});
 
 		GridBagConstraints gbl_run = new GridBagConstraints();
@@ -1106,11 +1030,185 @@ public class SwingWindow
 		});
 
 		frame.getContentPane().add(run, gbl_run);
+
+		if (GuiConfig.getStoreConfigOnClose())
+		{
+			readAndApplyConfig(fields, transformerSelected, GuiConfig.getConfig());
+		}
+		frame.addWindowListener(new WindowAdapter()
+		{
+			@Override
+			public void windowClosing(WindowEvent e)
+			{
+				GuiConfig.setLimitConsoleLines(shouldLimitLines.getState());
+				GuiConfig.setStoreConfigOnClose(storeConfigOnClose.getState());
+				GuiConfig.setConfig(createConfig(fields, transformerSelected));
+				GuiConfig.save();
+			}
+		});
+
 		frame.setVisible(true);
+	}
+
+	private static void readAndApplyConfig(List<ConfigItem> fields, DefaultListModel<TransformerWithConfig> transformerSelected, String args1)
+	{
+		List<String> split = splitQuoteAware(args1, ' ');
+
+		for (ConfigItem i : fields)
+		{
+			i.clearValue();
+		}
+		transformerSelected.clear();
+		for (int i = 0; i < split.size(); i++)
+		{
+			String arg = split.get(i);
+			for (ConfigItem item : fields)
+			{
+				if (arg.equals("-" + item.getFieldName()))
+				{
+					if (item.type == ItemType.BOOLEAN)
+						item.setValue(true);
+					else if (split.size() > i + 1)
+					{
+						String value = split.get(i + 1);
+						if (value.charAt(0) == '"' && value.charAt(value.length() - 1) == '"')
+						{
+							value = value.substring(1, value.length() - 1);
+						}
+						if (item.type == ItemType.FILE)
+							item.setValue(value);
+						else
+							((DefaultListModel<String>) item.component).addElement(value);
+					}
+				}
+			}
+			if (arg.equals("-transformer") && split.size() > i + 1)
+			{
+				String value = split.get(i + 1);
+				int pos = value.indexOf(":");
+				if (pos != -1)
+				{
+					String transformerClass = value.substring(0, pos);
+					if (NAME_TO_TRANSFORMER.containsKey(transformerClass))
+					{
+						Class<?> clazz = NAME_TO_TRANSFORMER.get(transformerClass);
+						String shortenedName = TRANSFORMER_TO_NAME.get(clazz);
+						Object cfg = TransformerConfigUtil.getConfig(clazz);
+						if (cfg != null)
+						{
+							Class<?> cfgClazz = cfg.getClass();
+							try
+							{
+								String cfgStr = value.substring(pos + 1);
+								List<String> opts = splitQuoteAware(cfgStr, ':');
+								for (String opt : opts)
+								{
+									String[] optSplit = opt.split("=", 2);
+									if (optSplit.length != 2)
+									{
+										System.out.println("Transformer config option without value: " + opt);
+										continue;
+									}
+									String key = optSplit[0];
+									String sval = optSplit[1];
+									if (sval.charAt(0) == '"' && sval.charAt(sval.length() - 1) == '"')
+									{
+										sval = sval.substring(1, sval.length() - 1);
+									}
+									Field field = TransformerConfigUtil.getTransformerConfigFieldWithSuperclass(cfgClazz, key);
+									if (field == null)
+									{
+										System.out.println("Unknown transformer config option " + key);
+										continue;
+									}
+									Class<?> fType = field.getType();
+									field.setAccessible(true);
+									try
+									{
+										Object oval = TransformerConfigUtil.convertToObj(fType, sval);
+										if (oval == null)
+										{
+											System.out.println("GUI does not support config type " + fType + ", option name: " + key + " in " +
+															   shortenedName);
+											continue;
+										}
+										field.set(cfg, oval);
+									} catch (NumberFormatException ex)
+									{
+										System.out.println("Could not convert " + sval + " to " + fType + ", option name: " + key + " in " +
+														   shortenedName);
+										ex.printStackTrace();
+									}
+								}
+							} catch (ReflectiveOperationException ex)
+							{
+								ex.printStackTrace();
+							}
+						}
+						transformerSelected.addElement(new TransformerWithConfig(shortenedName, cfg));
+					}
+				} else
+				{
+					if (NAME_TO_TRANSFORMER.containsKey(value))
+					{
+						String shortenedName = TRANSFORMER_TO_NAME.get(NAME_TO_TRANSFORMER.get(value));
+						transformerSelected.addElement(new TransformerWithConfig(shortenedName));
+					}
+				}
+			}
+		}
+	}
+
+	private static String createConfig(List<ConfigItem> fields, DefaultListModel<TransformerWithConfig> transformerSelected)
+	{
+		StringBuilder builder = new StringBuilder();
+		builder.append("java -jar deobfuscator.jar");
+		for (ConfigItem i : fields)
+		{
+			if (i.type != ItemType.FILE)
+				continue;
+			if (((String) i.getValue()).split(" ").length > 1)
+				builder.append(" -").append(i.getFieldName()).append(" ").append("\"").append(i.getValue()).append("\"");
+			else if (!((String) i.getValue()).isEmpty())
+				builder.append(" -").append(i.getFieldName()).append(" ").append(i.getValue());
+			else
+				builder.append(" -").append(i.getFieldName()).append(" \"\"");
+		}
+		for (Object o : transformerSelected.toArray())
+		{
+			TransformerWithConfig transformer = (TransformerWithConfig) o;
+			builder.append(" -transformer ").append(transformer.toExportString());
+		}
+		for (ConfigItem i : fields)
+		{
+			if (i.type != ItemType.FILELIST && i.type != ItemType.STRINGLIST)
+				continue;
+			for (Object o : (List<?>) i.getValue())
+			{
+				if (((String) o).split(" ").length > 1)
+					builder.append(" -").append(i.getFieldName()).append(" ").append("\"").append(o).append("\"");
+				else if (!((String) o).isEmpty())
+					builder.append(" -").append(i.getFieldName()).append(" ").append(o);
+				else
+					builder.append(" -").append(i.getFieldName()).append(" \"\"");
+			}
+		}
+		for (ConfigItem i : fields)
+		{
+			if (i.type != ItemType.BOOLEAN)
+				continue;
+			if ((Boolean) i.getValue())
+				builder.append(" -").append(i.getFieldName());
+		}
+		return builder.toString();
 	}
 
 	private static List<String> splitQuoteAware(String args1, char splitChar)
 	{
+		if (args1 == null)
+		{
+			return new ArrayList<>();
+		}
 		List<String> split = new ArrayList<>();
 		{
 			int start = 0;
