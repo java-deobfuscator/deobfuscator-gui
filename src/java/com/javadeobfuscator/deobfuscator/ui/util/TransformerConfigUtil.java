@@ -4,6 +4,7 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.Locale;
 import java.util.Set;
 
 import com.javadeobfuscator.deobfuscator.ui.SwingWindow;
@@ -78,6 +79,16 @@ public class TransformerConfigUtil
 		} else if (fType == double.class || fType == Double.class)
 		{
 			oval = Double.parseDouble(strVal);
+		} else if (fType.isEnum())
+		{
+			for (Object eObj : fType.getEnumConstants())
+			{
+				Enum<?> e = (Enum<?>) eObj;
+				if (e.name().toLowerCase(Locale.ROOT).equals(strVal.toLowerCase(Locale.ROOT)))
+				{
+					return e;
+				}
+			}
 		}
 		return oval;
 	}
