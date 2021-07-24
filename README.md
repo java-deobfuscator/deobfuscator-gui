@@ -14,6 +14,8 @@ Note that as of version 3.0 very old versions of deobfuscator will no longer be 
 3. Run the GUI:
     * Specify an input and output file, and then add the required libraries and select your transformers.
 
+Some transformers have their own configuration, right click a selected transformer to edit its config.
+
 ## Screenshots
 
 ![swing](swing.png)
