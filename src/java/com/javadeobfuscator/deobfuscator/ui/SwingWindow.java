@@ -34,6 +34,8 @@ import java.util.stream.IntStream;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 
+import com.github.weisj.darklaf.LafManager;
+import com.github.weisj.darklaf.settings.ThemeSettings;
 import com.javadeobfuscator.deobfuscator.ui.component.SwingConfiguration;
 import com.javadeobfuscator.deobfuscator.ui.component.SwingConfiguration.ConfigItem;
 import com.javadeobfuscator.deobfuscator.ui.component.SwingConfiguration.ItemType;
@@ -56,8 +58,10 @@ public class SwingWindow
 	public static Transformers trans;
 	private static Config config;
 	private static List<Class<?>> transformers;
+	private static JMenu menu;
 	private static JCheckBoxMenuItem shouldLimitLines;
 	private static JCheckBoxMenuItem storeConfigOnClose;
+	private static JCheckBoxMenuItem enableDarkLaf;
 	private static final Map<Class<?>, String> TRANSFORMER_TO_NAME = new HashMap<>();
 	private static final Map<String, Class<?>> NAME_TO_TRANSFORMER = new HashMap<>();
 
@@ -81,12 +85,19 @@ public class SwingWindow
 			System.exit(1);
 			return;
 		}
+		GuiConfig.read();
 		try
 		{
 			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e)
+		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e2)
 		{
-			e.printStackTrace();
+			e2.printStackTrace();
+		}
+		ThemeSettings.getInstance().setConfiguration(GuiConfig.getDarklafSettings());
+		if (GuiConfig.isDarkLaf())
+		{
+			LafManager.install();
+			ThemeSettings.getInstance().apply();
 		}
 		loadWrappers();
 		List<ConfigItem> fields = new SwingConfiguration(config.get()).fieldsList;
@@ -99,18 +110,71 @@ public class SwingWindow
 
 		//Menu
 		JMenuBar menuBar = new JMenuBar();
-		JMenu menu = new JMenu("Options");
+		menu = new JMenu(GuiConfig.isDarkLaf() ? "  Options" : "Options");
 		menuBar.add(menu);
 		shouldLimitLines = new JCheckBoxMenuItem("Limit Console Lines");
 		menu.add(shouldLimitLines);
-		storeConfigOnClose = new JCheckBoxMenuItem("Store config on close", true);
+		storeConfigOnClose = new JCheckBoxMenuItem("Store transformer config on close", true);
 		menu.add(storeConfigOnClose);
+		enableDarkLaf = new JCheckBoxMenuItem(new AbstractAction("Enable DarkLaf Theme")
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				if (enableDarkLaf.getState())
+				{
+					LafManager.install();
+					menu.setText("  Options");
+					ThemeSettings.getInstance().apply();
+					GuiConfig.setDarkLaf(true);
+				} else
+				{
+					int i = JOptionPane.showConfirmDialog(frame, "Disabling DarkLaf requires application restart.\n" +
+																 "Close Deobfuscator now?", "Close Deobfuscator?",
+							JOptionPane.YES_NO_OPTION);
+					if (i != JOptionPane.YES_OPTION)
+					{
+						enableDarkLaf.setState(true);
+						return;
+					}
+					GuiConfig.setDarkLaf(false);
+					GuiConfig.setDarklafSettings(ThemeSettings.getInstance().exportConfiguration());
+					GuiConfig.save();
+					System.exit(0);
+				}
+			}
+		});
+		enableDarkLaf.setState(GuiConfig.isDarkLaf());
+		menu.add(enableDarkLaf);
+		JMenuItem theme = new JMenuItem(new AbstractAction("DarkLaf Theme Options")
+		{
+			@Override
+			public void actionPerformed(ActionEvent e)
+			{
+				if (!enableDarkLaf.getState())
+				{
+					int i = JOptionPane.showConfirmDialog(frame, "To see DarkLaf Theme Options, DarkLaf Theme needs to be enabled first.\n" +
+																 "Enable DarkLaf Theme?", "Enable DarkLaf Theme?", JOptionPane.YES_NO_OPTION);
+					if (i != JOptionPane.YES_OPTION)
+					{
+						return;
+					}
+					LafManager.install();
+					menu.setText("  Options");
+					ThemeSettings.getInstance().apply();
+					enableDarkLaf.setState(true);
+					GuiConfig.setDarkLaf(true);
+				}
+				ThemeSettings.showSettingsDialog(frame, Dialog.ModalityType.APPLICATION_MODAL);
+			}
+		});
+		menu.add(theme);
 		frame.setJMenuBar(menuBar);
 
 		//GuiConfig
-		GuiConfig.read();
 		shouldLimitLines.setState(GuiConfig.isLimitConsoleLines());
 		storeConfigOnClose.setState(GuiConfig.getStoreConfigOnClose());
+		enableDarkLaf.setState(GuiConfig.isDarkLaf());
 
 		//Deobfuscator Input
 		JPanel inputPnl = new JPanel();
@@ -1043,6 +1107,7 @@ public class SwingWindow
 				GuiConfig.setLimitConsoleLines(shouldLimitLines.getState());
 				GuiConfig.setStoreConfigOnClose(storeConfigOnClose.getState());
 				GuiConfig.setConfig(createConfig(fields, transformerSelected));
+				GuiConfig.setDarklafSettings(ThemeSettings.getInstance().exportConfiguration());
 				GuiConfig.save();
 			}
 		});

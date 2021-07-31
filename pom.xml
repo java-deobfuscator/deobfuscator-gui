@@ -6,17 +6,22 @@
 	<version>4.0</version>
 	<name>deobfuscator-gui</name>
 	<description>UI front-end for deobfuscator</description>
+    <repositories>
+        <repository>  <!-- TODO Remove when com.github.weisj:swing-extensions-laf-support (dep from darklaf) is no longer a snapshot -->
+            <id>sonatype-snapshots</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+        </repository>
+    </repositories>
 	<dependencies>
 		<!-- Functionality -->
 		<!-- EMPTY -->
 		
 		<!--- User interface -->
-		<!-- https://mvnrepository.com/artifact/org.controlsfx/controlsfx -->
-		<dependency>
-			<groupId>org.controlsfx</groupId>
-			<artifactId>controlsfx</artifactId>
-			<version>8.40.14</version>
-		</dependency>
+        <dependency>
+            <groupId>com.github.weisj</groupId>
+            <artifactId>darklaf-core</artifactId>
+            <version>2.7.0</version>
+        </dependency>
 	</dependencies>
 	<build>
 		<sourceDirectory>src/java</sourceDirectory>

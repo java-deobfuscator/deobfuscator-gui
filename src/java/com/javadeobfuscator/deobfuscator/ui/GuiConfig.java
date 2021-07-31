@@ -1,15 +1,14 @@
 package com.javadeobfuscator.deobfuscator.ui;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Properties;
 
 import javax.swing.JOptionPane;
+
+import com.github.weisj.darklaf.settings.SettingsConfiguration;
+import com.github.weisj.darklaf.settings.ThemeSettings;
 
 public class GuiConfig
 {
@@ -19,6 +18,8 @@ public class GuiConfig
 	private static final String LIMIT_CONSOLE_LINES = "limit_console_lines";
 	private static final String STORE_CONFIG_ON_CLOSE = "store_config_on_close";
 	private static final String CONFIG = "config";
+	private static final String DARKLAF_ENABLED = "darklaf_enabled";
+	private static final String DARKLAF_SETTINGS = "darklaf_settings";
 
 	static
 	{
@@ -78,6 +79,60 @@ public class GuiConfig
 	public static void setStoreConfigOnClose(boolean state)
 	{
 		PROPERTIES.setProperty(STORE_CONFIG_ON_CLOSE, Boolean.toString(state));
+	}
+
+	public static boolean isDarkLaf()
+	{
+		return Boolean.parseBoolean(PROPERTIES.getProperty(DARKLAF_ENABLED));
+	}
+
+	public static void setDarkLaf(boolean state)
+	{
+		PROPERTIES.setProperty(DARKLAF_ENABLED, Boolean.toString(state));
+	}
+
+	public static SettingsConfiguration getDarklafSettings()
+	{
+		String property = PROPERTIES.getProperty(DARKLAF_SETTINGS);
+		if (property == null)
+		{
+			return ThemeSettings.getInstance().exportConfiguration();
+		}
+		try
+		{
+			byte[] decode = Base64.getDecoder().decode(property);
+			ByteArrayInputStream bain = new ByteArrayInputStream(decode);
+			try (ObjectInputStream objectInputStream = new ObjectInputStream(bain))
+			{
+				Object obj = objectInputStream.readObject();
+				if (obj instanceof SettingsConfiguration)
+				{
+					return (SettingsConfiguration) obj;
+				}
+			} catch (IOException | ClassNotFoundException e)
+			{
+				e.printStackTrace();
+				PROPERTIES.remove(DARKLAF_SETTINGS);
+			}
+		} catch (Throwable t)
+		{
+			t.printStackTrace();
+		}
+		return ThemeSettings.getInstance().exportConfiguration();
+	}
+
+	public static void setDarklafSettings(SettingsConfiguration state)
+	{
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		try (ObjectOutputStream objectOutputStream = new ObjectOutputStream(baos))
+		{
+			objectOutputStream.writeObject(state);
+			objectOutputStream.flush();
+			PROPERTIES.setProperty(DARKLAF_SETTINGS, Base64.getEncoder().encodeToString(baos.toByteArray()));
+		} catch (IOException e)
+		{
+			e.printStackTrace();
+		}
 	}
 
 	public static String getConfig()
