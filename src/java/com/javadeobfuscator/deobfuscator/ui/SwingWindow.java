@@ -64,6 +64,7 @@ public class SwingWindow
 	private static JCheckBoxMenuItem enableDarkLaf;
 	private static final Map<Class<?>, String> TRANSFORMER_TO_NAME = new HashMap<>();
 	private static final Map<String, Class<?>> NAME_TO_TRANSFORMER = new HashMap<>();
+	private static DefaultListModel<TransformerWithConfig> transformerSelected;
 
 	public static void main(String[] args)
 	{
@@ -138,8 +139,7 @@ public class SwingWindow
 						return;
 					}
 					GuiConfig.setDarkLaf(false);
-					GuiConfig.setDarklafSettings(ThemeSettings.getInstance().exportConfiguration());
-					GuiConfig.save();
+					writeAndSaveGuiConfig(fields);
 					System.exit(0);
 				}
 			}
@@ -371,7 +371,7 @@ public class SwingWindow
 		}
 		//Second list (selected)
 		JScrollPane transformerSelectedScroll = new JScrollPane();
-		DefaultListModel<TransformerWithConfig> transformerSelected = new DefaultListModel<>();
+		transformerSelected = new DefaultListModel<>();
 		JList<TransformerWithConfig> selectedJList = new JList<>(transformerSelected);
 		selectedJList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
 		selectedJList.setModel(transformerSelected);
@@ -1104,15 +1104,20 @@ public class SwingWindow
 			@Override
 			public void windowClosing(WindowEvent e)
 			{
-				GuiConfig.setLimitConsoleLines(shouldLimitLines.getState());
-				GuiConfig.setStoreConfigOnClose(storeConfigOnClose.getState());
-				GuiConfig.setConfig(createConfig(fields, transformerSelected));
-				GuiConfig.setDarklafSettings(ThemeSettings.getInstance().exportConfiguration());
-				GuiConfig.save();
+				writeAndSaveGuiConfig(fields);
 			}
 		});
 
 		frame.setVisible(true);
+	}
+
+	private static void writeAndSaveGuiConfig(List<ConfigItem> fields)
+	{
+		GuiConfig.setLimitConsoleLines(shouldLimitLines.getState());
+		GuiConfig.setStoreConfigOnClose(storeConfigOnClose.getState());
+		GuiConfig.setConfig(createConfig(fields, transformerSelected));
+		GuiConfig.setDarklafSettings(ThemeSettings.getInstance().exportConfiguration());
+		GuiConfig.save();
 	}
 
 	private static void readAndApplyConfig(List<ConfigItem> fields, DefaultListModel<TransformerWithConfig> transformerSelected, String args1)
