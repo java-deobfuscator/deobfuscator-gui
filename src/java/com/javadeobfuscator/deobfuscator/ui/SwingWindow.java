@@ -1,5 +1,6 @@
 package com.javadeobfuscator.deobfuscator.ui;
 
+import java.awt.Color;
 import java.awt.Dialog;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
@@ -32,6 +33,7 @@ import java.util.Optional;
 import java.util.stream.IntStream;
 
 import javax.swing.*;
+import javax.swing.border.MatteBorder;
 import javax.swing.border.TitledBorder;
 
 import com.github.weisj.darklaf.LafManager;
@@ -971,7 +973,11 @@ public class SwingWindow
 			JFrame newFrame = new JFrame();
 			newFrame.setTitle("Console");
 			area.setEditable(false);
-			newFrame.getContentPane().add(new JScrollPane(area));
+			JScrollPane outputScrollPane = new JScrollPane(area);
+			if (enableDarkLaf.getState()) {
+				outputScrollPane.setBorder(new MatteBorder(0, 8, 8, 8, Color.DARK_GRAY));
+			}
+			newFrame.getContentPane().add(outputScrollPane);
 			newFrame.pack();
 			newFrame.setSize(800, 600);
 			newFrame.setVisible(true);
