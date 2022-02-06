@@ -7,6 +7,8 @@ Deobfuscator-GUI is a GUI for the command line deobfuscator. User interfaces are
 Note that as of version 3.0 very old versions of deobfuscator will no longer be supported.
 
 ## How to Use 
+A java installation with javafx is required. [Azul Zulu JDK+FX/JRE+FX builds](https://www.azul.com/downloads/?package=jdk-fx) are the easiest option to get these.
+
 1. Download the deobfuscator.jar from https://github.com/java-deobfuscator/deobfuscator. Place it in the same folder as the GUI you will be downloading to avoid selecting the JAR when you open the GUI.
 2. Download or build the GUI:
     * Download: [releases](https://github.com/java-deobfuscator/deobfuscator-gui/releases/latest)
