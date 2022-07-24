@@ -16,6 +16,21 @@
             <artifactId>darklaf-core</artifactId>
             <version>2.7.2</version>
         </dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-base</artifactId>
+			<version>17.0.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-swing</artifactId>
+			<version>17.0.2</version>
+		</dependency>
+		<dependency>
+			<groupId>org.openjfx</groupId>
+			<artifactId>javafx-graphics</artifactId>
+			<version>17.0.2</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<sourceDirectory>src/java</sourceDirectory>
