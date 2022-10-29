@@ -1,7 +1,15 @@
 package com.javadeobfuscator.deobfuscator.ui;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Base64;
 import java.util.Properties;
 
@@ -34,7 +42,7 @@ public class GuiConfig
 			save();
 			return;
 		}
-		try (InputStreamReader reader = new InputStreamReader(new FileInputStream(PROPERTY_FILE), StandardCharsets.UTF_8))
+		try (InputStreamReader reader = new InputStreamReader(Files.newInputStream(PROPERTY_FILE.toPath()), StandardCharsets.UTF_8))
 		{
 			PROPERTIES.load(reader);
 		} catch (IOException e)
@@ -50,7 +58,7 @@ public class GuiConfig
 
 	public static void save()
 	{
-		try (OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(PROPERTY_FILE), StandardCharsets.UTF_8))
+		try (OutputStreamWriter writer = new OutputStreamWriter(Files.newOutputStream(PROPERTY_FILE.toPath()), StandardCharsets.UTF_8))
 		{
 			PROPERTIES.store(writer, null);
 		} catch (IOException e)
