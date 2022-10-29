@@ -3,20 +3,25 @@ package com.javadeobfuscator.deobfuscator.ui.util;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 public class FallbackException extends Exception
 {
 	public String path;
 
-	public FallbackException(String title, String msg)
+	public FallbackException(String title, String msg, Throwable cause)
 	{
+		super(msg, cause);
+		this.printStackTrace();
 		JPanel fallback = new JPanel();
 		fallback.setLayout(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
@@ -25,6 +30,12 @@ public class FallbackException extends Exception
 		gbc.gridwidth = GridBagConstraints.REMAINDER;
 		gbc.insets = new Insets(0, 0, 4, 0);
 		fallback.add(new JLabel(msg), gbc);
+		if (cause != null) {
+			gbc.gridy++;
+			JTextArea area = new JTextArea(getStackTrace(cause));
+			area.setEditable(false);
+			fallback.add(area, gbc);
+		}
 		gbc.gridy++;
 		fallback.add(new JLabel("Select deobfuscator.jar to try again:"), gbc);
 		gbc.gridy++;
@@ -52,5 +63,11 @@ public class FallbackException extends Exception
 		if (result == JOptionPane.CLOSED_OPTION || result == JOptionPane.NO_OPTION)
 			System.exit(0);
 		path = textField.getText();
+	}
+
+	private static String getStackTrace(Throwable t) {
+		StringWriter sw = new StringWriter();
+		t.printStackTrace(new PrintWriter(sw));
+		return sw.toString();
 	}
 }

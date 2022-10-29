@@ -1335,16 +1335,16 @@ public class SwingWindow
 		{
 			File file = new File(path);
 			if (!file.exists())
-				throw new FallbackException("Loading error", "Path specified does not exist.");
+				throw new FallbackException("Loading error", "Path specified does not exist.", null);
 			try
 			{
 				WrapperFactory.setupJarLoader(file);
 			} catch (IOException e)
 			{
-				throw new FallbackException("Loading error", "IOException while reading file.");
+				throw new FallbackException("Loading error", "IOException while reading file.", e);
 			} catch (InvalidJarException e)
 			{
-				throw new FallbackException("Loading error", "Invaild JAR selected. Note that old versions of deobfuscator are not supported!");
+				throw new FallbackException("Loading error", "Invaild JAR selected. Note that old versions of deobfuscator are not supported!", e);
 			}
 			deob = WrapperFactory.getDeobfuscator();
 			trans = WrapperFactory.getTransformers();

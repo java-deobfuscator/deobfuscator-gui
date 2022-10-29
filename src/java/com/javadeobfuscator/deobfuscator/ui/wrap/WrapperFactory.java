@@ -73,6 +73,7 @@ public class WrapperFactory
 	 */
 	private static ByteLoader fromJar(File jar) throws IOException, InvalidJarException
 	{
+		System.out.println("Loading deobfuscator from jar: " + jar.getAbsolutePath());
 		return new ByteLoader(readClasses(jar));
 	}
 
@@ -96,6 +97,7 @@ public class WrapperFactory
 	 */
 	private static ByteLoader iter(File dir, boolean recurse)
 	{
+		System.out.println("Searching for deobfuscator in " + dir.getAbsolutePath());
 		File[] files = dir.listFiles();
 		// return if no files exist in the directory
 		if (files == null)

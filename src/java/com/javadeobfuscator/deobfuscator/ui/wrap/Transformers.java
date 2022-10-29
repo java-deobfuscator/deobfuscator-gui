@@ -57,7 +57,7 @@ public class Transformers
 			} catch (Exception e)
 			{
 				transformers.clear();
-				throw new FallbackException("Loading Problem", "Failed to parse transformer list.");
+				throw new FallbackException("Loading Problem", "Failed to parse transformer list.", e);
 			}
 		}
 		return transformers;

@@ -62,7 +62,7 @@ public class Deobfuscator
 				config = new Config(conf.newInstance());
 			} catch (Exception e)
 			{
-				throw new FallbackException("Loading Problem", "Could not create Config instance.");
+				throw new FallbackException("Loading Problem", "Could not create Config instance.", e);
 			}
 		}
 		return config;
