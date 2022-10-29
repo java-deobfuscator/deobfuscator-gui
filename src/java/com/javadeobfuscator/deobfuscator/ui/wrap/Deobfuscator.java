@@ -58,7 +58,7 @@ public class Deobfuscator
 		{
 			try
 			{
-				Class<?> conf = loader.findClass("com.javadeobfuscator.deobfuscator.config.Configuration");
+				Class<?> conf = loader.loadClass("com.javadeobfuscator.deobfuscator.config.Configuration");
 				config = new Config(conf.newInstance());
 			} catch (Exception e)
 			{
@@ -75,7 +75,7 @@ public class Deobfuscator
 	 */
 	public void run() throws Exception
 	{
-		Class<?> main = loader.findClass("com.javadeobfuscator.deobfuscator.Deobfuscator");
+		Class<?> main = loader.loadClass("com.javadeobfuscator.deobfuscator.Deobfuscator");
 		Config conf = getConfig();
 		Constructor<?> con = main.getDeclaredConstructor(conf.get().getClass());
 		Object deob = con.newInstance(conf.get());
@@ -95,7 +95,7 @@ public class Deobfuscator
 		{
 			if (instance != null)
 			{
-				Class<?> main = loader.findClass("com.javadeobfuscator.deobfuscator.Deobfuscator");
+				Class<?> main = loader.loadClass("com.javadeobfuscator.deobfuscator.Deobfuscator");
 				Field cp = main.getDeclaredField("classpath");
 				cp.setAccessible(true);
 				((Map<?, ?>) cp.get(instance)).clear();
@@ -135,13 +135,13 @@ public class Deobfuscator
 	private void hookLogger(String ownerName, PrintStream hook) throws Exception
 	{
 		// unused, but required to load class, which sets up some important static fields
-		getLogger(loader.findClass(ownerName));
-		Class<?> simpleLogger = loader.findClass("org.slf4j.simple.SimpleLogger");
+		getLogger(loader.loadClass(ownerName));
+		Class<?> simpleLogger = loader.loadClass("org.slf4j.simple.SimpleLogger");
 
 		Object config = Reflect.getFieldS(simpleLogger, "CONFIG_PARAMS");
 		Object outChoice = Reflect.getFieldO(config, "outputChoice");
 
-		Class<?> typeEnum = loader.findClass("org.slf4j.simple.OutputChoice$OutputChoiceType");
+		Class<?> typeEnum = loader.loadClass("org.slf4j.simple.OutputChoice$OutputChoiceType");
 		Object enumChoice = Reflect.getFieldS(typeEnum, "FILE");
 
 		// hook
@@ -152,7 +152,7 @@ public class Deobfuscator
 	private Object getLogger(Class<?> loggerOwner) throws Exception
 	{
 		// LoggerFactory.getLogger(getClass())
-		Class<?> factory = loader.findClass("org.slf4j.LoggerFactory");
+		Class<?> factory = loader.loadClass("org.slf4j.LoggerFactory");
 		Method m = factory.getDeclaredMethod("getLogger", Class.class);
 		return m.invoke(null, loggerOwner);
 	}

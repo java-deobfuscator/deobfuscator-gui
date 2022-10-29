@@ -38,15 +38,15 @@ public class Transformers
 		{
 			try
 			{
-				Class<?> transformer = loader.findClass("com.javadeobfuscator.deobfuscator.transformers.Transformer");
-				Class<?> transformerD = loader.findClass("com.javadeobfuscator.deobfuscator.transformers.DelegatingTransformer");
+				Class<?> transformer = loader.loadClass("com.javadeobfuscator.deobfuscator.transformers.Transformer");
+				Class<?> transformerD = loader.loadClass("com.javadeobfuscator.deobfuscator.transformers.DelegatingTransformer");
 				List<String> names = new ArrayList<>(loader.getClassNames());
 				Collections.sort(names);
 				for (String name : names)
 				{
 					if (name.startsWith("com.javadeobfuscator.deobfuscator.transformers."))
 					{
-						Class<?> clazz = loader.findClass(name);
+						Class<?> clazz = loader.loadClass(name);
 						if (!clazz.equals(transformer) && !clazz.equals(transformerD) && transformer.isAssignableFrom(clazz)
 							&& !Modifier.isAbstract(clazz.getModifiers()))
 						{
@@ -69,7 +69,7 @@ public class Transformers
 	 */
 	public Object getConfigFor(Class<?> transClass) throws Exception
 	{
-		Class<?> confLoader = loader.findClass("com.javadeobfuscator.deobfuscator.config.TransformerConfig");
+		Class<?> confLoader = loader.loadClass("com.javadeobfuscator.deobfuscator.config.TransformerConfig");
 		Method configFor = confLoader.getDeclaredMethod("configFor", Class.class);
 		return configFor.invoke(null, transClass);
 	}
