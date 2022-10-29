@@ -91,8 +91,8 @@ public class WrapperFactory
 	/**
 	 * Iterate files to detect the Deobfuscator jar.
 	 *
-	 * @param dir
-	 * @param recurse
+	 * @param dir     directory to look in
+	 * @param recurse whether to recurse into subdirectories
 	 * @return JavaDeobfuscator loader.
 	 */
 	private static ByteLoader iter(File dir, boolean recurse)
@@ -110,28 +110,20 @@ public class WrapperFactory
 		if (deobfuscator.exists())
 			try
 			{
-				ByteLoader v = fromJar(deobfuscator);
-				if (v != null)
-				{
-					return v;
-				}
-			} catch (IOException e)
+				return fromJar(deobfuscator);
+			} catch (IOException | InvalidJarException e)
 			{
-			} catch (InvalidJarException e)
-			{
+				System.err.println("Failed to load deobfuscator from " + deobfuscator.getAbsolutePath());
+				e.printStackTrace();
 			}
 		if (deobfuscator100.exists())
 			try
 			{
-				ByteLoader v = fromJar(deobfuscator100);
-				if (v != null)
-				{
-					return v;
-				}
-			} catch (IOException e)
+				return fromJar(deobfuscator100);
+			} catch (IOException | InvalidJarException e)
 			{
-			} catch (InvalidJarException e)
-			{
+				System.err.println("Failed to load deobfuscator from " + deobfuscator100.getAbsolutePath());
+				e.printStackTrace();
 			}
 		for (File file : files)
 		{
@@ -149,15 +141,11 @@ public class WrapperFactory
 			{
 				try
 				{
-					ByteLoader v = fromJar(file);
-					if (v != null)
-					{
-						return v;
-					}
-				} catch (IOException e)
+					return fromJar(file);
+				} catch (IOException | InvalidJarException e)
 				{
-				} catch (InvalidJarException e)
-				{
+					System.err.println("Failed to load deobfuscator from " + file.getAbsolutePath());
+					e.printStackTrace();
 				}
 			}
 		}
@@ -167,9 +155,10 @@ public class WrapperFactory
 	/**
 	 * Read a map from the given data file.
 	 *
-	 * @param dataFile File to read from.
+	 * @param jar File to read from.
 	 * @return Map of class names to their bytecode.
-	 * @throws InvalidJarException
+	 * @throws IOException         Jar could not be read.
+	 * @throws InvalidJarException Thrown if jar loaded was not an instance of JavaDeobfuscator
 	 */
 	private static Map<String, byte[]> readClasses(File jar) throws IOException, InvalidJarException
 	{
