@@ -1,62 +1,64 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-	<modelVersion>4.0.0</modelVersion>
-	<groupId>com.javadeobfuscator</groupId>
-	<artifactId>deobfuscator-gui</artifactId>
-	<url>https://github.com/java-deobfuscator/</url>
-	<version>4.0</version>
-	<name>deobfuscator-gui</name>
-	<description>UI front-end for deobfuscator</description>
-	<dependencies>
-		<!-- Functionality -->
-		<!-- EMPTY -->
-		
-		<!--- User interface -->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.javadeobfuscator</groupId>
+    <artifactId>deobfuscator-gui</artifactId>
+    <version>4.0</version>
+
+    <name>deobfuscator-gui</name>
+    <description>UI front-end for deobfuscator</description>
+    <url>https://github.com/java-deobfuscator/</url>
+
+    <dependencies>
+        <!--- User interface -->
         <dependency>
             <groupId>com.github.weisj</groupId>
             <artifactId>darklaf-core</artifactId>
-            <version>2.7.2</version>
+            <version>3.0.2</version>
         </dependency>
-	</dependencies>
-	<build>
-		<sourceDirectory>src/java</sourceDirectory>
+    </dependencies>
+
+    <build>
+        <sourceDirectory>src/java</sourceDirectory>
         <resources>
             <resource>
                 <directory>src/resources</directory>
             </resource>
         </resources>
-		<plugins>
-			<plugin>
+        <plugins>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.8.1</version>
-				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
-				</configuration>
-			</plugin>
-			<plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.10.1</version>
+                <configuration>
+                    <source>1.8</source>
+                    <target>1.8</target>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-assembly-plugin</artifactId>
+                <artifactId>maven-assembly-plugin</artifactId>
                 <version>3.3.0</version>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<archive>
-						<manifest>
-							<mainClass>com.javadeobfuscator.deobfuscator.ui.SwingWindow</mainClass>
-						</manifest>
-					</archive>
-					<descriptorRefs>
-						<descriptorRef>jar-with-dependencies</descriptorRef>
-					</descriptorRefs>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <mainClass>com.javadeobfuscator.deobfuscator.ui.SwingWindow</mainClass>
+                        </manifest>
+                    </archive>
+                    <descriptorRefs>
+                        <descriptorRef>jar-with-dependencies</descriptorRef>
+                    </descriptorRefs>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
