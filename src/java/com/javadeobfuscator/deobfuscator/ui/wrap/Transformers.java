@@ -30,28 +30,32 @@ public class Transformers
 
 	/**
 	 * @return List of all transformer classes.
-	 * @throws FallbackException
+	 * @throws FallbackException when an error occurs while reading transformer classes
 	 */
 	public List<Class<?>> getTransformers() throws FallbackException
 	{
-		if (transformers.size() == 0)
+		if (transformers.isEmpty())
 		{
 			try
 			{
 				Class<?> transformer = loader.loadClass("com.javadeobfuscator.deobfuscator.transformers.Transformer");
 				Class<?> transformerD = loader.loadClass("com.javadeobfuscator.deobfuscator.transformers.DelegatingTransformer");
-				List<String> names = new ArrayList<>(loader.getClassNames());
-				Collections.sort(names);
-				for (String name : names)
+				List<String> filtered = new ArrayList<>();
+				for (String name : loader.getClassNames())
 				{
 					if (name.startsWith("com.javadeobfuscator.deobfuscator.transformers."))
 					{
-						Class<?> clazz = loader.loadClass(name);
-						if (!clazz.equals(transformer) && !clazz.equals(transformerD) && transformer.isAssignableFrom(clazz)
-							&& !Modifier.isAbstract(clazz.getModifiers()))
-						{
-							transformers.add(clazz);
-						}
+						filtered.add(name);
+					}
+				}
+				Collections.sort(filtered);
+				for (String name : filtered)
+				{
+					Class<?> clazz = loader.loadClass(name);
+					if (!clazz.equals(transformer) && !clazz.equals(transformerD) && transformer.isAssignableFrom(clazz)
+						&& !Modifier.isAbstract(clazz.getModifiers()))
+					{
+						transformers.add(clazz);
 					}
 				}
 			} catch (Exception e)
