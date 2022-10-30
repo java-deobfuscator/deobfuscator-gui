@@ -43,7 +43,8 @@ public class Transformers
 				List<String> filtered = new ArrayList<>();
 				for (String name : loader.getClassNames())
 				{
-					if (name.startsWith("com.javadeobfuscator.deobfuscator.transformers."))
+					if (name.startsWith("com.javadeobfuscator.deobfuscator.transformers.") && !name.endsWith("package-info") && !name.endsWith("Config")
+						&& !name.contains("$"))
 					{
 						filtered.add(name);
 					}

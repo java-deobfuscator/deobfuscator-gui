@@ -19,7 +19,7 @@ public class WrapperFactory
 	/**
 	 * Buffer size to use for reading classes from deobfuscator jar.
 	 */
-	private final static int BUFF_SIZE = (int) Math.pow(128, 2);
+	private final static int BUFF_SIZE = (int) Math.pow(2, 13);
 	/**
 	 * Loader to use.
 	 */
@@ -195,7 +195,7 @@ public class WrapperFactory
 					}
 					// We know this class is in the deobfuscator jar, so if the jar does 
 					// not contain it, it is not the correct file.
-					if (className.contains("com/javadeobfuscator/deobfuscator/Deobfuscator"))
+					if (!found && className.startsWith("com/javadeobfuscator/deobfuscator/Deobfuscator"))
 					{
 						found = true;
 					}

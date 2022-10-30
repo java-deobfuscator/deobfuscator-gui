@@ -3,8 +3,6 @@ package com.javadeobfuscator.deobfuscator.ui.util;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -14,6 +12,8 @@ import javax.swing.JPanel;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
+import com.javadeobfuscator.deobfuscator.ui.SwingWindow;
+
 public class FallbackException extends Exception
 {
 	public String path;
@@ -22,6 +22,7 @@ public class FallbackException extends Exception
 	{
 		super(msg, cause);
 		this.printStackTrace();
+		SwingWindow.ensureSwingLafLoaded();
 		JPanel fallback = new JPanel();
 		fallback.setLayout(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
@@ -32,7 +33,7 @@ public class FallbackException extends Exception
 		fallback.add(new JLabel(msg), gbc);
 		if (cause != null) {
 			gbc.gridy++;
-			JTextArea area = new JTextArea(getStackTrace(cause));
+			JTextArea area = new JTextArea(ExceptionUtil.getStackTrace(cause));
 			area.setEditable(false);
 			fallback.add(area, gbc);
 		}
@@ -63,11 +64,5 @@ public class FallbackException extends Exception
 		if (result == JOptionPane.CLOSED_OPTION || result == JOptionPane.NO_OPTION)
 			System.exit(0);
 		path = textField.getText();
-	}
-
-	private static String getStackTrace(Throwable t) {
-		StringWriter sw = new StringWriter();
-		t.printStackTrace(new PrintWriter(sw));
-		return sw.toString();
 	}
 }

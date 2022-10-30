@@ -42,6 +42,7 @@ import com.javadeobfuscator.deobfuscator.ui.component.SwingConfiguration.ItemTyp
 import com.javadeobfuscator.deobfuscator.ui.component.SynchronousJFXCaller;
 import com.javadeobfuscator.deobfuscator.ui.component.SynchronousJFXFileChooser;
 import com.javadeobfuscator.deobfuscator.ui.component.WrapLayout;
+import com.javadeobfuscator.deobfuscator.ui.util.ExceptionUtil;
 import com.javadeobfuscator.deobfuscator.ui.util.FallbackException;
 import com.javadeobfuscator.deobfuscator.ui.util.InvalidJarException;
 import com.javadeobfuscator.deobfuscator.ui.util.TransformerConfigUtil;
@@ -64,41 +65,47 @@ public class SwingWindow
 	private static final Map<Class<?>, String> TRANSFORMER_TO_NAME = new HashMap<>();
 	private static final Map<String, Class<?>> NAME_TO_TRANSFORMER = new HashMap<>();
 	private static DefaultListModel<TransformerWithConfig> transformerSelected;
+	private static boolean swingLafLoaded = false;
+	public static Thread mainThread;
+	private static List<ConfigItem> configFieldsList;
 
 	public static void main(String[] args)
 	{
-		try
+		mainThread = Thread.currentThread();
+		Thread loaderThread = new Thread("Deobfuscator Jar Loader Thread")
 		{
-			SynchronousJFXCaller.init();
-		} catch (NoClassDefFoundError e)
-		{
-			e.printStackTrace();
-			try
+			@Override
+			public void run()
 			{
-				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-			} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e2)
-			{
-				e2.printStackTrace();
+				loadWrappers();
 			}
-			JOptionPane.showMessageDialog(null, "You need a JVM with JavaFX (an non-headless installation).\n\n" +
-												"Could not find class " + e.getMessage(), "Deobfuscator GUI", JOptionPane.ERROR_MESSAGE);
-			System.exit(1);
-			return;
-		}
+		};
+		loaderThread.start();
+		Thread jfxInitThread = new Thread("JavaFX Init Thread")
+		{
+			@Override
+			public void run()
+			{
+				try
+				{
+					SynchronousJFXCaller.init();
+				} catch (NoClassDefFoundError e)
+				{
+					e.printStackTrace();
+					ensureSwingLafLoaded();
+					ExceptionUtil.showFatalError("You need a JVM with JavaFX (an non-headless installation).\n\n" +
+												 "Could not find class " + e.getMessage());
+					System.exit(1);
+				}
+			}
+		};
 		GuiConfig.read();
-		try
-		{
-			UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e)
-		{
-			e.printStackTrace();
-		}
+		ensureSwingLafLoaded();
 		if (GuiConfig.isDarkLaf())
 		{
 			installDarkLaf();
 		}
-		loadWrappers();
-		List<ConfigItem> fields = new SwingConfiguration(config.get()).fieldsList;
+
 		//Initial frame
 		JFrame frame = new JFrame();
 		frame.setTitle("Deobfuscator GUI");
@@ -134,7 +141,7 @@ public class SwingWindow
 						return;
 					}
 					GuiConfig.setDarkLaf(false);
-					writeAndSaveGuiConfig(fields);
+					writeAndSaveGuiConfig(configFieldsList);
 					System.exit(0);
 				}
 			}
@@ -183,7 +190,18 @@ public class SwingWindow
 		inputPnl.setLayout(new GridBagLayout());
 
 		int gridy = 0;
-		for (ConfigItem i : fields)
+
+		try
+		{
+			loaderThread.join();
+		} catch (InterruptedException e)
+		{
+			ExceptionUtil.showFatalError("", new RuntimeException("Couldn't wait for jar loader thread!", e));
+			System.exit(1);
+		}
+		configFieldsList = new SwingConfiguration(config.get()).fieldsList;
+
+		for (ConfigItem i : configFieldsList)
 		{
 			if (i.type != SwingConfiguration.ItemType.FILE)
 				continue;
@@ -245,7 +263,7 @@ public class SwingWindow
 					}
 					if (!setDir && i.getDisplayName().equals("Output"))
 					{
-						Optional<ConfigItem> input = fields.stream().filter(ci -> ci.getDisplayName().equals("Input")).findAny();
+						Optional<ConfigItem> input = configFieldsList.stream().filter(ci -> ci.getDisplayName().equals("Input")).findAny();
 						if (input.isPresent())
 						{
 							Object value2 = input.get().getValue();
@@ -300,7 +318,7 @@ public class SwingWindow
 			inputPnl.add(boolWrapPanel, gbc);
 		}
 
-		for (ConfigItem i : fields)
+		for (ConfigItem i : configFieldsList)
 		{
 			if (i.type != ItemType.BOOLEAN)
 				continue;
@@ -530,7 +548,7 @@ public class SwingWindow
 
 		tabbedPane.addTab("Transformers", transformersPanel);
 
-		for (ConfigItem i : fields)
+		for (ConfigItem i : configFieldsList)
 		{
 			if (i.type != ItemType.FILELIST)
 				continue;
@@ -668,7 +686,7 @@ public class SwingWindow
 			tabbedPane.addTab(i.getDisplayName(), libPanel);
 		}
 
-		for (ConfigItem i : fields)
+		for (ConfigItem i : configFieldsList)
 		{
 			if (i.type != ItemType.STRINGLIST)
 				continue;
@@ -879,7 +897,7 @@ public class SwingWindow
 			submitButton.addActionListener(e13 ->
 			{
 				String args1 = textPane.getText();
-				readAndApplyConfig(fields, transformerSelected, args1);
+				readAndApplyConfig(configFieldsList, transformerSelected, args1);
 				loadConfigFrame.dispose();
 			});
 			loadConfigFrame.setVisible(true);
@@ -928,7 +946,7 @@ public class SwingWindow
 			saveConfigFrame.getContentPane().add(scrollPane, gbc_scrollPane);
 
 			//Write args
-			String t = createConfig(fields, transformerSelected);
+			String t = createConfig(configFieldsList, transformerSelected);
 			textPane.setText(t);
 
 			JButton copyButton = new JButton("Copy");
@@ -973,7 +991,7 @@ public class SwingWindow
 				try
 				{
 					//Set fields
-					for (ConfigItem item : fields)
+					for (ConfigItem item : configFieldsList)
 					{
 						item.clearFieldValue();
 						item.setFieldValue();
@@ -1090,18 +1108,40 @@ public class SwingWindow
 
 		if (GuiConfig.getStoreConfigOnClose())
 		{
-			readAndApplyConfig(fields, transformerSelected, GuiConfig.getConfig());
+			readAndApplyConfig(configFieldsList, transformerSelected, GuiConfig.getConfig());
 		}
 		frame.addWindowListener(new WindowAdapter()
 		{
 			@Override
 			public void windowClosing(WindowEvent e)
 			{
-				writeAndSaveGuiConfig(fields);
+				writeAndSaveGuiConfig(configFieldsList);
 			}
 		});
 
+		try
+		{
+			jfxInitThread.join();
+		} catch (InterruptedException e)
+		{
+			ExceptionUtil.showFatalError("", new RuntimeException("Couldn't wait for jfx init thread", e));
+		}
 		frame.setVisible(true);
+	}
+
+	public static synchronized void ensureSwingLafLoaded()
+	{
+		if (!swingLafLoaded)
+		{
+			swingLafLoaded = true;
+			try
+			{
+				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			} catch (ClassNotFoundException | InstantiationException | IllegalAccessException | UnsupportedLookAndFeelException e)
+			{
+				e.printStackTrace();
+			}
+		}
 	}
 
 	private static void installDarkLaf()

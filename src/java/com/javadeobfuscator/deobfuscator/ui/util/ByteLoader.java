@@ -3,6 +3,8 @@ package com.javadeobfuscator.deobfuscator.ui.util;
 import java.util.Map;
 import java.util.Set;
 
+import com.javadeobfuscator.deobfuscator.ui.SwingWindow;
+
 /**
  * ClassLoader that can find classes via their bytecode. Allows loading of external jar files to be instrumented before loading.
  */
@@ -21,7 +23,7 @@ public final class ByteLoader extends ClassLoader
 	public ByteLoader(Map<String, byte[]> classes)
 	{
 		super(getSystemClassLoader());
-		Thread.currentThread().setContextClassLoader(this);
+		SwingWindow.mainThread.setContextClassLoader(this);
 		this.classes = classes;
 	}
 
