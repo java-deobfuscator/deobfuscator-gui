@@ -21,7 +21,7 @@ public class SwingConfiguration
 	/**
 	 * Ignored field names.
 	 */
-	private final static Set<String> IGNORED_VALUES = new HashSet<String>();
+	private final static Set<String> IGNORED_VALUES = new HashSet<>();
 
 	static
 	{
