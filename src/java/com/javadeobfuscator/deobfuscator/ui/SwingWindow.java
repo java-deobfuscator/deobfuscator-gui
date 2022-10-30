@@ -29,10 +29,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import javax.swing.*;
-import javax.swing.border.TitledBorder;
 
 import com.github.weisj.darklaf.LafManager;
 import com.github.weisj.darklaf.settings.ThemeSettings;
@@ -186,7 +186,6 @@ public class SwingWindow
 			gbc.weightx = 1;
 			frame.getContentPane().add(inputPnl, gbc);
 		}
-		inputPnl.setBorder(new TitledBorder("Deobfuscator Input"));
 		inputPnl.setLayout(new GridBagLayout());
 
 		int gridy = 0;
@@ -208,17 +207,18 @@ public class SwingWindow
 			JLabel label = new JLabel(i.getDisplayName() + ":");
 			{
 				GridBagConstraints gbc = new GridBagConstraints();
-				gbc.anchor = GridBagConstraints.PAGE_START;
-				gbc.insets = new Insets(5, 2, 2, 2);
+				gbc.anchor = GridBagConstraints.BASELINE;
+				gbc.insets = new Insets(4, 2, 7, 2);
 				gbc.gridx = 0;
 				gbc.gridy = gridy;
 				inputPnl.add(label, gbc);
 			}
 			JTextField textField = new JTextField();
+			label.setLabelFor(textField);
 			i.component = textField;
 			{
 				GridBagConstraints gbc = new GridBagConstraints();
-				gbc.insets = new Insets(5, 2, 2, 2);
+				gbc.insets = new Insets(0, 2, 7, 2);
 				gbc.gridx = 1;
 				gbc.gridy = gridy;
 				gbc.weightx = 1;
@@ -228,7 +228,7 @@ public class SwingWindow
 			JButton button = new JButton("Select");
 			{
 				GridBagConstraints gbc = new GridBagConstraints();
-				gbc.insets = new Insets(5, 7, 2, 2);
+				gbc.insets = new Insets(0, 7, 7, 2);
 				gbc.gridx = 2;
 				gbc.gridy = gridy;
 				gbc.ipadx = 15;
@@ -329,7 +329,6 @@ public class SwingWindow
 
 		//Other Options
 		JPanel optionsPnl = new JPanel();
-		optionsPnl.setBorder(new TitledBorder("Other Options"));
 		optionsPnl.setLayout(new GridBagLayout());
 		{
 			GridBagConstraints gbc = new GridBagConstraints();
@@ -358,6 +357,7 @@ public class SwingWindow
 		transformersPanel.setLayout(new GridBagLayout());
 		//First list (available)
 		JScrollPane transformerListScroll = new JScrollPane();
+		transformerListScroll.setPreferredSize(new Dimension(200, 200));
 		DefaultListModel<String> transformerList = new DefaultListModel<>();
 		for (Class<?> clazz : transformers)
 		{
@@ -381,6 +381,7 @@ public class SwingWindow
 		}
 		//Second list (selected)
 		JScrollPane transformerSelectedScroll = new JScrollPane();
+		transformerSelectedScroll.setPreferredSize(new Dimension(200, 200));
 		transformerSelected = new DefaultListModel<>();
 		JList<TransformerWithConfig> selectedJList = new JList<>(transformerSelected);
 		selectedJList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
@@ -393,7 +394,7 @@ public class SwingWindow
 			gbc.gridheight = 4;
 			gbc.anchor = GridBagConstraints.SOUTHEAST;
 			gbc.fill = GridBagConstraints.BOTH;
-			gbc.insets = new Insets(10, 0, 10, 10);
+			gbc.insets = new Insets(10, 0, 10, 0);
 			gbc.weightx = 0.5;
 			gbc.weighty = 1;
 			transformersPanel.add(transformerSelectedScroll, gbc);
@@ -474,80 +475,164 @@ public class SwingWindow
 		{
 			GridBagConstraints gbc = new GridBagConstraints();
 			gbc.gridx = 1;
-			gbc.weighty = 0.5;
+			gbc.gridy = 0;
+			gbc.weighty = 0.25;
 			transformersPanel.add(panel1, gbc);
 		}
-
 		JPanel panel2 = new JPanel();
-		panel2.setLayout(new GridBagLayout());
 		{
 			GridBagConstraints gbc = new GridBagConstraints();
 			gbc.gridx = 1;
-			gbc.weighty = 0.5;
+			gbc.gridy = 3;
+			gbc.weighty = 0.25;
 			transformersPanel.add(panel2, gbc);
 		}
 
-		JPanel panel3 = new JPanel();
-		panel3.setLayout(new GridBagLayout());
-		{
-			GridBagConstraints gbc = new GridBagConstraints();
-			gbc.gridx = 1;
-			gbc.weighty = 0.5;
-			transformersPanel.add(panel3, gbc);
-		}
-
-		JPanel panel4 = new JPanel();
-		{
-			GridBagConstraints gbc = new GridBagConstraints();
-			gbc.gridx = 1;
-			gbc.weighty = 0.5;
-			transformersPanel.add(panel4, gbc);
-		}
-
+		int buttonWidth = 30;
 		JButton add = new JButton(">");
-		Insets margin = add.getMargin();
-		add.setMargin(new Insets(margin.top + 30, 2, margin.bottom + 30, 2));
-		add.setPreferredSize(new Dimension(30, add.getPreferredSize().height));
-		add.addActionListener(e ->
 		{
-			for (String str : transformerJList.getSelectedValuesList())
+			Insets margin = add.getMargin();
+			add.setMargin(new Insets(margin.top + 30, 1, margin.bottom + 30, 1));
+			int prefHeight = add.getPreferredSize().height;
+			add.setPreferredSize(new Dimension(buttonWidth, prefHeight));
+			add.setMinimumSize(new Dimension(buttonWidth, prefHeight));
+			add.setMaximumSize(new Dimension(buttonWidth, prefHeight));
+			add.addActionListener(e ->
 			{
-				transformerSelected.addElement(new TransformerWithConfig(str));
-			}
-		});
-		{
+				for (String str : transformerJList.getSelectedValuesList())
+				{
+					transformerSelected.addElement(new TransformerWithConfig(str));
+				}
+			});
 			GridBagConstraints gbc = new GridBagConstraints();
-			gbc.anchor = GridBagConstraints.CENTER;
+			gbc.gridx = 1;
+			gbc.gridy = 1;
 			gbc.insets = new Insets(5, 0, 5, 0);
-			gbc.ipadx = 10;
-			panel2.add(add, gbc);
+			transformersPanel.add(add, gbc);
 		}
 
 		JButton remove = new JButton("<");
-		margin = remove.getMargin();
-		remove.setMargin(new Insets(margin.top + 30, 2, margin.bottom + 30, 2));
-		remove.setPreferredSize(new Dimension(30, remove.getPreferredSize().height));
-		remove.addActionListener(e ->
 		{
-			int[] indexes = selectedJList.getSelectedIndices();
-			Arrays.sort(indexes);
-			int[] reversed = IntStream.range(0, indexes.length).map(i -> indexes[indexes.length - i - 1])
-					.toArray();
-			for (int i : reversed)
+			Insets margin = remove.getMargin();
+			remove.setMargin(new Insets(margin.top + 30, 1, margin.bottom + 30, 1));
+			int prefHeight2 = remove.getPreferredSize().height;
+			remove.setPreferredSize(new Dimension(buttonWidth, prefHeight2));
+			remove.setMinimumSize(new Dimension(buttonWidth, prefHeight2));
+			remove.setMaximumSize(new Dimension(buttonWidth, prefHeight2));
+			remove.addActionListener(e ->
 			{
-				transformerSelected.remove(i);
-			}
-		});
-		{
+				int[] indexes = selectedJList.getSelectedIndices();
+				Arrays.sort(indexes);
+				int[] reversed = IntStream.range(0, indexes.length).map(i -> indexes[indexes.length - i - 1]).toArray();
+				for (int i : reversed)
+				{
+					transformerSelected.remove(i);
+				}
+			});
 			GridBagConstraints gbc = new GridBagConstraints();
-			gbc.anchor = GridBagConstraints.CENTER;
+			gbc.gridx = 1;
+			gbc.gridy = 2;
 			gbc.insets = new Insets(5, 2, 5, 2);
-			gbc.ipadx = 10;
-			panel3.add(remove, gbc);
+			transformersPanel.add(remove, gbc);
+		}
+
+		JButton up = new JButton("Ʌ");
+		{
+			up.addActionListener(e ->
+			{
+				//method returns always ordered array
+				int[] indexesArr = selectedJList.getSelectedIndices();
+				List<Integer> indexes = Arrays.stream(indexesArr).boxed().collect(Collectors.toList());
+				//copy for iteration
+				ArrayList<Integer> indexesIter = new ArrayList<>(indexes);
+				//contains target indices of elements already moved (prevents changing order of elements)
+				List<Integer> blocked = new ArrayList<>();
+				for (int size = indexesIter.size(), i = 0; i < size; i++)
+				{
+					int valI = indexesIter.get(i);
+					int newIndex = valI - 1;
+					if (blocked.contains(newIndex)) {
+						//if target index is blocked, we cannot move, so our index is blocked too
+						blocked.add(valI);
+						continue;
+					}
+					//move up
+					TransformerWithConfig t = transformerSelected.remove(valI);
+					if (newIndex < 0)
+					{
+						newIndex = 0;
+						//cannot move up, so block our index to prevent swapping with potential next selected element
+						blocked.add(newIndex);
+					}
+					transformerSelected.add(newIndex, t);
+					indexes.set(i, newIndex);
+				}
+				selectedJList.setSelectedIndices(indexes.stream().mapToInt(i -> i).toArray());
+			});
+			Insets margin = up.getMargin();
+			up.setMargin(new Insets(margin.top + 30, 1, margin.bottom + 30, 1));
+			int prefHeight3 = up.getPreferredSize().height;
+			up.setPreferredSize(new Dimension(buttonWidth, prefHeight3));
+			up.setMinimumSize(new Dimension(buttonWidth, prefHeight3));
+			up.setMaximumSize(new Dimension(buttonWidth, prefHeight3));
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.anchor = GridBagConstraints.EAST;
+			gbc.gridx = 3;
+			gbc.gridy = 1;
+			gbc.insets = new Insets(5, 2, 5, 2);
+			transformersPanel.add(up, gbc);
+		}
+		JButton down = new JButton("V");
+		{
+			down.addActionListener(e ->
+			{
+				//method returns always ordered array
+				int[] indexesArr = selectedJList.getSelectedIndices();
+				List<Integer> indexes = Arrays.stream(indexesArr).boxed().collect(Collectors.toList());
+				//copy for iteration
+				ArrayList<Integer> indexesIter = new ArrayList<>(indexes);
+				//contains target indices of elements already moved (prevents changing order of elements)
+				List<Integer> blocked = new ArrayList<>();
+				//iterate in reverse order to move last element down first
+				for (int size = indexesIter.size(), i = size - 1; i >= 0; i--)
+				{
+					int valI = indexesIter.get(i);
+					int newIndex = valI + 1;
+					if (blocked.contains(newIndex)) {
+						//if target index is blocked, we cannot move, so our index is blocked too
+						blocked.add(valI);
+						continue;
+					}
+					//move down
+					TransformerWithConfig t = transformerSelected.remove(valI);
+					if (newIndex > transformerSelected.size() - 1)
+					{
+						newIndex = transformerSelected.size();
+						//cannot move down, so block our index to prevent swapping with potential previous selected element
+						blocked.add(newIndex);
+					}
+					transformerSelected.add(newIndex, t);
+					indexes.set(i, newIndex);
+				}
+				selectedJList.setSelectedIndices(indexes.stream().mapToInt(i -> i).toArray());
+			});
+			Insets margin = down.getMargin();
+			down.setMargin(new Insets(margin.top + 30, 1, margin.bottom + 30, 1));
+			int prefHeightDown = down.getPreferredSize().height;
+			down.setPreferredSize(new Dimension(buttonWidth, prefHeightDown));
+			down.setMinimumSize(new Dimension(buttonWidth, prefHeightDown));
+			down.setMaximumSize(new Dimension(buttonWidth, prefHeightDown));
+			GridBagConstraints gbc = new GridBagConstraints();
+			gbc.anchor = GridBagConstraints.EAST;
+			gbc.gridx = 3;
+			gbc.gridy = 2;
+			gbc.insets = new Insets(5, 2, 5, 2);
+			transformersPanel.add(down, gbc);
 		}
 
 		tabbedPane.addTab("Transformers", transformersPanel);
 
+		//File lists (path, libraries)
 		for (ConfigItem i : configFieldsList)
 		{
 			if (i.type != ItemType.FILELIST)
@@ -969,6 +1054,10 @@ public class SwingWindow
 		JButton run = new JButton("Run");
 
 		JTextArea area = new JTextArea();
+		if (!enableDarkLaf.isSelected())
+		{
+			area.setFont(area.getFont().deriveFont(12F));
+		}
 		PrintStream print = new PrintStream(new DeobfuscatorOutputStream(System.out, area));
 		System.setErr(print);
 		System.setOut(print);
@@ -984,7 +1073,7 @@ public class SwingWindow
 			JScrollPane outputScrollPane = new JScrollPane(area);
 			newFrame.getContentPane().add(outputScrollPane);
 			newFrame.pack();
-			newFrame.setSize(800, 600);
+			newFrame.setSize(1400, 600);
 			newFrame.setVisible(true);
 			Thread thread = new Thread(() ->
 			{
