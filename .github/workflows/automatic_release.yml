@@ -19,6 +19,8 @@ jobs:
         java-version: '8'
         distribution: 'zulu'
         java-package: jdk+fx
+    - name: Set Release version env variable
+      run: echo "RELEASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)" >> $GITHUB_ENV
     - name: Cache local Maven repository
       uses: actions/cache@v2
       with:
@@ -34,9 +36,9 @@ jobs:
       uses: "marvinpinto/action-automatic-releases@latest"
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
-        automatic_release_tag: "latest"
+        automatic_release_tag: "${{ env.RELEASE_VERSION }}"
         prerelease: false
-        title: "Latest Build"
+        title: "v${{ env.RELEASE_VERSION }}"
         files: |
           LICENSE
           target/deobfuscator-gui.jar
