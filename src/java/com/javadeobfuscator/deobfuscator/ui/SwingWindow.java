@@ -1448,9 +1448,9 @@ public class SwingWindow
 
 	private static void loadWrappers()
 	{
-		WrapperFactory.setupJarLoader(false);
 		try
 		{
+			WrapperFactory.setupJarLoader(false);
 			deob = WrapperFactory.getDeobfuscator();
 			trans = WrapperFactory.getTransformers();
 			config = deob.getConfig();

@@ -59,7 +59,7 @@ public class WrapperFactory
 	 *
 	 * @param recursive Check sub-directories of adjacent folders.
 	 */
-	public static void setupJarLoader(boolean recursive)
+	public static void setupJarLoader(boolean recursive) throws FallbackException
 	{
 		loader = auto(recursive);
 	}
@@ -84,7 +84,7 @@ public class WrapperFactory
 	 * @param recurse Check sub-directories of adjacent folders.
 	 * @return JavaDeobfuscator loader. {@code null} if no JavaDeobfuscator jar could be found.
 	 */
-	private static ByteLoader auto(boolean recurse)
+	private static ByteLoader auto(boolean recurse) throws FallbackException
 	{
 		return iter(new File(System.getProperty("user.dir")), recurse);
 	}
@@ -96,14 +96,14 @@ public class WrapperFactory
 	 * @param recurse whether to recurse into subdirectories
 	 * @return JavaDeobfuscator loader.
 	 */
-	private static ByteLoader iter(File dir, boolean recurse)
+	private static ByteLoader iter(File dir, boolean recurse) throws FallbackException
 	{
 		System.out.println("Searching for deobfuscator in " + dir.getAbsolutePath());
 		File[] files = dir.listFiles();
 		// return if no files exist in the directory
 		if (files == null)
 		{
-			return null;
+			throw new FallbackException("Loading problem", "No files found in directory: " + dir.getAbsolutePath(), null);
 		}
 		// check for common names
 		File deobfuscator = new File(dir, "deobfuscator.jar");
@@ -131,10 +131,11 @@ public class WrapperFactory
 			// check sub-dirs
 			if (recurse && file.isDirectory())
 			{
-				ByteLoader v = iter(file, true);
-				if (v != null)
+				try
 				{
-					return v;
+					return iter(file, true);
+				} catch (FallbackException e) {
+					// ignore
 				}
 			}
 			// check files in the directory
@@ -150,7 +151,7 @@ public class WrapperFactory
 				}
 			}
 		}
-		return null;
+		throw new FallbackException("Loading problem", "No deobfuscator jar found in directory: " + dir.getAbsolutePath(), null);
 	}
 
 	/**
