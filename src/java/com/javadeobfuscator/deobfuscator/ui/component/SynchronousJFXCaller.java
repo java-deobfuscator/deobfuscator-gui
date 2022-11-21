@@ -23,10 +23,17 @@ import javafx.embed.swing.JFXPanel;
  */
 public class SynchronousJFXCaller<T>
 {
-	public static void init()
+	private static volatile boolean initialized = false;
+
+	public static synchronized void init()
 	{
+		if (initialized)
+		{
+			return;
+		}
 		new JFXPanel();
 		Platform.setImplicitExit(false);
+		initialized = true;
 	}
 
 	private final Callable<T> callable;
