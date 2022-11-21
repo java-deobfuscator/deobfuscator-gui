@@ -16,7 +16,7 @@ public class Deobfuscator
 	/**
 	 * ClassLoader to load classes from deobfuscator jar.
 	 */
-	private ByteLoader loader;
+	private final ByteLoader loader;
 	/**
 	 * Config wrapper to use in deobfuscator.
 	 */
@@ -26,8 +26,12 @@ public class Deobfuscator
 	 */
 	private Object instance;
 
-	Deobfuscator(ByteLoader loader)
+	Deobfuscator(ByteLoader loader) throws FallbackException
 	{
+		if (loader == null)
+		{
+			throw new FallbackException("Loading Problem", "Could not create Config instance.", new NullPointerException("loader is null"));
+		}
 		this.loader = loader;
 	}
 

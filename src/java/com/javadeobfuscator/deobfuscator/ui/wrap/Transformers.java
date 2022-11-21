@@ -21,10 +21,14 @@ public class Transformers
 	/**
 	 * ClassLoader to load classes from deobfuscator jar.
 	 */
-	private ByteLoader loader;
+	private final ByteLoader loader;
 
-	public Transformers(ByteLoader loader)
+	public Transformers(ByteLoader loader) throws FallbackException
 	{
+		if (loader == null)
+		{
+			throw new FallbackException("Loading Problem", "Could not create Config instance.", new NullPointerException("loader is null"));
+		}
 		this.loader = loader;
 	}
 

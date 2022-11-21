@@ -11,6 +11,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import com.javadeobfuscator.deobfuscator.ui.util.ByteLoader;
+import com.javadeobfuscator.deobfuscator.ui.util.FallbackException;
 import com.javadeobfuscator.deobfuscator.ui.util.InvalidJarException;
 import com.javadeobfuscator.deobfuscator.ui.util.MiniClassReader;
 
@@ -28,7 +29,7 @@ public class WrapperFactory
 	/**
 	 * @return Deobfuscator wrapper.
 	 */
-	public static Deobfuscator getDeobfuscator()
+	public static Deobfuscator getDeobfuscator() throws FallbackException
 	{
 		return new Deobfuscator(loader);
 	}
@@ -36,7 +37,7 @@ public class WrapperFactory
 	/**
 	 * @return Transformers wrapper.
 	 */
-	public static Transformers getTransformers()
+	public static Transformers getTransformers() throws FallbackException
 	{
 		return new Transformers(loader);
 	}

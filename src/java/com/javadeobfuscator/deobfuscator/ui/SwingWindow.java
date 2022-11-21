@@ -1449,10 +1449,10 @@ public class SwingWindow
 	private static void loadWrappers()
 	{
 		WrapperFactory.setupJarLoader(false);
-		deob = WrapperFactory.getDeobfuscator();
-		trans = WrapperFactory.getTransformers();
 		try
 		{
+			deob = WrapperFactory.getDeobfuscator();
+			trans = WrapperFactory.getTransformers();
 			config = deob.getConfig();
 			transformers = trans.getTransformers();
 			for (Class<?> clazz : transformers)
