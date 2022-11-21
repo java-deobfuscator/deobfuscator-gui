@@ -98,17 +98,7 @@ public class SwingWindow
 			@Override
 			public void run()
 			{
-				try
-				{
-					SynchronousJFXCaller.init();
-				} catch (NoClassDefFoundError e)
-				{
-					e.printStackTrace();
-					ensureSwingLafLoaded();
-					ExceptionUtil.showFatalError("You need a JVM with JavaFX (non-headless installation).\n\n" +
-												 "Could not find class " + e.getMessage());
-					System.exit(1);
-				}
+				initJFX();
 			}
 		};
 		GuiConfig.read();
@@ -1230,6 +1220,21 @@ public class SwingWindow
 			ExceptionUtil.showFatalError("", new RuntimeException("Couldn't wait for jfx init thread", e));
 		}
 		frame.setVisible(true);
+	}
+
+	public static void initJFX()
+	{
+		try
+		{
+			SynchronousJFXCaller.init();
+		} catch (NoClassDefFoundError e)
+		{
+			e.printStackTrace();
+			ensureSwingLafLoaded();
+			ExceptionUtil.showFatalError("You need a JVM with JavaFX (non-headless installation).\n\n" +
+										 "Could not find class " + e.getMessage());
+			System.exit(1);
+		}
 	}
 
 	public static synchronized void ensureSwingLafLoaded()

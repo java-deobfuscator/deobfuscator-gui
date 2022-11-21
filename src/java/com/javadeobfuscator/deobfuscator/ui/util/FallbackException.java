@@ -3,6 +3,7 @@ package com.javadeobfuscator.deobfuscator.ui.util;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.io.File;
 
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
@@ -13,6 +14,8 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 
 import com.javadeobfuscator.deobfuscator.ui.SwingWindow;
+import com.javadeobfuscator.deobfuscator.ui.component.SynchronousJFXFileChooser;
+import javafx.stage.FileChooser;
 
 public class FallbackException extends Exception
 {
@@ -23,6 +26,7 @@ public class FallbackException extends Exception
 		super(msg, cause);
 		this.printStackTrace();
 		SwingWindow.ensureSwingLafLoaded();
+		SwingWindow.initJFX();
 		JPanel fallback = new JPanel();
 		fallback.setLayout(new GridBagLayout());
 		GridBagConstraints gbc = new GridBagConstraints();
@@ -46,12 +50,21 @@ public class FallbackException extends Exception
 		JButton button = new JButton("Select");
 		button.addActionListener(e ->
 		{
-			JFileChooser inputFile = new JFileChooser();
-			int action = inputFile.showOpenDialog(null);
-			if (action == JFileChooser.APPROVE_OPTION)
+			SynchronousJFXFileChooser chooser = new SynchronousJFXFileChooser(() -> {
+				FileChooser ch = new FileChooser();
+				ch.setTitle("Select deobfuscator jar");
+				ch.setInitialDirectory(new File("abc").getAbsoluteFile().getParentFile());
+				ch.getExtensionFilters().addAll(
+						new FileChooser.ExtensionFilter("Jar files", "*.jar"),
+						new FileChooser.ExtensionFilter("Jar and Zip files", "*.jar", "*.zip"),
+						new FileChooser.ExtensionFilter("Zip files", "*.zip"),
+						new FileChooser.ExtensionFilter("All Files", "*.*"));
+				return ch;
+			});
+			File file = chooser.showOpenDialog();
+			if (file != null)
 			{
-				String path = inputFile.getSelectedFile().toString();
-				textField.setText(path);
+				textField.setText(file.getAbsolutePath());
 			}
 		});
 		GridBagConstraints gbc_Button = new GridBagConstraints();
