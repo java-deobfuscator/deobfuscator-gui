@@ -71,6 +71,18 @@ public class SwingWindow
 
 	public static void main(String[] args)
 	{
+		try
+		{
+			Class.forName("javafx.stage.FileChooser");
+		} catch (ClassNotFoundException e)
+		{
+			e.printStackTrace();
+			ensureSwingLafLoaded();
+			ExceptionUtil.showFatalError("You need a JVM with JavaFX (non-headless installation).\n\n" +
+										 "Could not find class " + e.getMessage());
+			System.exit(1);
+			return;
+		}
 		mainThread = Thread.currentThread();
 		Thread loaderThread = new Thread("Deobfuscator Jar Loader Thread")
 		{
@@ -93,7 +105,7 @@ public class SwingWindow
 				{
 					e.printStackTrace();
 					ensureSwingLafLoaded();
-					ExceptionUtil.showFatalError("You need a JVM with JavaFX (an non-headless installation).\n\n" +
+					ExceptionUtil.showFatalError("You need a JVM with JavaFX (non-headless installation).\n\n" +
 												 "Could not find class " + e.getMessage());
 					System.exit(1);
 				}
@@ -551,7 +563,8 @@ public class SwingWindow
 				{
 					int valI = indexesIter.get(i);
 					int newIndex = valI - 1;
-					if (blocked.contains(newIndex)) {
+					if (blocked.contains(newIndex))
+					{
 						//if target index is blocked, we cannot move, so our index is blocked too
 						blocked.add(valI);
 						continue;
@@ -598,7 +611,8 @@ public class SwingWindow
 				{
 					int valI = indexesIter.get(i);
 					int newIndex = valI + 1;
-					if (blocked.contains(newIndex)) {
+					if (blocked.contains(newIndex))
+					{
 						//if target index is blocked, we cannot move, so our index is blocked too
 						blocked.add(valI);
 						continue;
