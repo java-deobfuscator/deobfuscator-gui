@@ -4,7 +4,7 @@
 
     <groupId>com.javadeobfuscator</groupId>
     <artifactId>deobfuscator-gui</artifactId>
-    <version>4.2-SNAPSHOT</version>
+    <version>4.2</version>
 
     <name>deobfuscator-gui</name>
     <description>UI front-end for deobfuscator</description>
