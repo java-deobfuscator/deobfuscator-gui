@@ -101,6 +101,7 @@ public class SwingWindow
 				initJFX();
 			}
 		};
+		jfxInitThread.start();
 		GuiConfig.read();
 		ensureSwingLafLoaded();
 		if (GuiConfig.isDarkLaf())
